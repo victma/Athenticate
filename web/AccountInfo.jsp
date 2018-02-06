@@ -1,7 +1,7 @@
 <%-- 
     Document   : accountInfo
     Created on : Jan 30, 2018, 12:24:23 PM
-    Author     : eleve
+    Author     : victma
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>

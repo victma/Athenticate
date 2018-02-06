@@ -4,14 +4,27 @@
         <servlet-name>AccountServlet</servlet-name>
         <servlet-class>fr.ensta.authenticator.AccountServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>fr.ensta.authenticator.LoginServlet</servlet-class>
+    </servlet>
+    
     <servlet-mapping>
         <servlet-name>AccountServlet</servlet-name>
         <url-pattern>/account</url-pattern>
     </servlet-mapping>
-    
     <servlet>
         <servlet-name>accountInfo</servlet-name>
         <jsp-file>/AccountInfo.jsp</jsp-file>
+    </servlet>
+    
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/login</url-pattern>
+    </servlet-mapping>
+    <servlet>
+        <servlet-name>loginForm</servlet-name>
+        <jsp-file>/Login.jsp</jsp-file>
     </servlet>
     
     <session-config>
