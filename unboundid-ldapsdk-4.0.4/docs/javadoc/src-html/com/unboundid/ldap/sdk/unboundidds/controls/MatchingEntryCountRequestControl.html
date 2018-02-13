@@ -1,0 +1,1022 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>/*<a name="line.1"></a>
+<span class="sourceLineNo">002</span> * Copyright 2014-2018 Ping Identity Corporation<a name="line.2"></a>
+<span class="sourceLineNo">003</span> * All Rights Reserved.<a name="line.3"></a>
+<span class="sourceLineNo">004</span> */<a name="line.4"></a>
+<span class="sourceLineNo">005</span>/*<a name="line.5"></a>
+<span class="sourceLineNo">006</span> * Copyright (C) 2015-2018 Ping Identity Corporation<a name="line.6"></a>
+<span class="sourceLineNo">007</span> *<a name="line.7"></a>
+<span class="sourceLineNo">008</span> * This program is free software; you can redistribute it and/or modify<a name="line.8"></a>
+<span class="sourceLineNo">009</span> * it under the terms of the GNU General Public License (GPLv2 only)<a name="line.9"></a>
+<span class="sourceLineNo">010</span> * or the terms of the GNU Lesser General Public License (LGPLv2.1 only)<a name="line.10"></a>
+<span class="sourceLineNo">011</span> * as published by the Free Software Foundation.<a name="line.11"></a>
+<span class="sourceLineNo">012</span> *<a name="line.12"></a>
+<span class="sourceLineNo">013</span> * This program is distributed in the hope that it will be useful,<a name="line.13"></a>
+<span class="sourceLineNo">014</span> * but WITHOUT ANY WARRANTY; without even the implied warranty of<a name="line.14"></a>
+<span class="sourceLineNo">015</span> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the<a name="line.15"></a>
+<span class="sourceLineNo">016</span> * GNU General Public License for more details.<a name="line.16"></a>
+<span class="sourceLineNo">017</span> *<a name="line.17"></a>
+<span class="sourceLineNo">018</span> * You should have received a copy of the GNU General Public License<a name="line.18"></a>
+<span class="sourceLineNo">019</span> * along with this program; if not, see &lt;http://www.gnu.org/licenses&gt;.<a name="line.19"></a>
+<span class="sourceLineNo">020</span> */<a name="line.20"></a>
+<span class="sourceLineNo">021</span>package com.unboundid.ldap.sdk.unboundidds.controls;<a name="line.21"></a>
+<span class="sourceLineNo">022</span><a name="line.22"></a>
+<span class="sourceLineNo">023</span><a name="line.23"></a>
+<span class="sourceLineNo">024</span><a name="line.24"></a>
+<span class="sourceLineNo">025</span>import java.util.ArrayList;<a name="line.25"></a>
+<span class="sourceLineNo">026</span><a name="line.26"></a>
+<span class="sourceLineNo">027</span>import com.unboundid.asn1.ASN1Boolean;<a name="line.27"></a>
+<span class="sourceLineNo">028</span>import com.unboundid.asn1.ASN1Element;<a name="line.28"></a>
+<span class="sourceLineNo">029</span>import com.unboundid.asn1.ASN1Integer;<a name="line.29"></a>
+<span class="sourceLineNo">030</span>import com.unboundid.asn1.ASN1Long;<a name="line.30"></a>
+<span class="sourceLineNo">031</span>import com.unboundid.asn1.ASN1OctetString;<a name="line.31"></a>
+<span class="sourceLineNo">032</span>import com.unboundid.asn1.ASN1Sequence;<a name="line.32"></a>
+<span class="sourceLineNo">033</span>import com.unboundid.ldap.sdk.Control;<a name="line.33"></a>
+<span class="sourceLineNo">034</span>import com.unboundid.ldap.sdk.LDAPException;<a name="line.34"></a>
+<span class="sourceLineNo">035</span>import com.unboundid.ldap.sdk.ResultCode;<a name="line.35"></a>
+<span class="sourceLineNo">036</span>import com.unboundid.util.Debug;<a name="line.36"></a>
+<span class="sourceLineNo">037</span>import com.unboundid.util.NotMutable;<a name="line.37"></a>
+<span class="sourceLineNo">038</span>import com.unboundid.util.StaticUtils;<a name="line.38"></a>
+<span class="sourceLineNo">039</span>import com.unboundid.util.ThreadSafety;<a name="line.39"></a>
+<span class="sourceLineNo">040</span>import com.unboundid.util.ThreadSafetyLevel;<a name="line.40"></a>
+<span class="sourceLineNo">041</span>import com.unboundid.util.Validator;<a name="line.41"></a>
+<span class="sourceLineNo">042</span><a name="line.42"></a>
+<span class="sourceLineNo">043</span>import static com.unboundid.ldap.sdk.unboundidds.controls.ControlMessages.*;<a name="line.43"></a>
+<span class="sourceLineNo">044</span><a name="line.44"></a>
+<span class="sourceLineNo">045</span><a name="line.45"></a>
+<span class="sourceLineNo">046</span><a name="line.46"></a>
+<span class="sourceLineNo">047</span>/**<a name="line.47"></a>
+<span class="sourceLineNo">048</span> * This class provides a request control which may be included in a search<a name="line.48"></a>
+<span class="sourceLineNo">049</span> * request to indicate that the server should provide the number of entries that<a name="line.49"></a>
+<span class="sourceLineNo">050</span> * match the search criteria.  The count will be included in the search result<a name="line.50"></a>
+<span class="sourceLineNo">051</span> * done message, and all search result entries will be suppressed.<a name="line.51"></a>
+<span class="sourceLineNo">052</span> * &lt;BR&gt;<a name="line.52"></a>
+<span class="sourceLineNo">053</span> * &lt;BLOCKQUOTE&gt;<a name="line.53"></a>
+<span class="sourceLineNo">054</span> *   &lt;B&gt;NOTE:&lt;/B&gt;  This class, and other classes within the<a name="line.54"></a>
+<span class="sourceLineNo">055</span> *   {@code com.unboundid.ldap.sdk.unboundidds} package structure, are only<a name="line.55"></a>
+<span class="sourceLineNo">056</span> *   supported for use against Ping Identity, UnboundID, and Alcatel-Lucent 8661<a name="line.56"></a>
+<span class="sourceLineNo">057</span> *   server products.  These classes provide support for proprietary<a name="line.57"></a>
+<span class="sourceLineNo">058</span> *   functionality or for external specifications that are not considered stable<a name="line.58"></a>
+<span class="sourceLineNo">059</span> *   or mature enough to be guaranteed to work in an interoperable way with<a name="line.59"></a>
+<span class="sourceLineNo">060</span> *   other types of LDAP servers.<a name="line.60"></a>
+<span class="sourceLineNo">061</span> * &lt;/BLOCKQUOTE&gt;<a name="line.61"></a>
+<span class="sourceLineNo">062</span> * &lt;BR&gt;<a name="line.62"></a>
+<span class="sourceLineNo">063</span> * Whenever possible, the server will use index information to quickly identify<a name="line.63"></a>
+<span class="sourceLineNo">064</span> * entries matching the criteria of the associated search request.  However, if<a name="line.64"></a>
+<span class="sourceLineNo">065</span> * the count is only determined using index information, then that count may<a name="line.65"></a>
+<span class="sourceLineNo">066</span> * include entries that would not actually be returned to the client in the<a name="line.66"></a>
+<span class="sourceLineNo">067</span> * course of processing that search (e.g., because the client doesn't have<a name="line.67"></a>
+<span class="sourceLineNo">068</span> * permission to access the entry, or because it is a special "operational"<a name="line.68"></a>
+<span class="sourceLineNo">069</span> * entry like an LDAP subentry, replication conflict entry, or soft-deleted<a name="line.69"></a>
+<span class="sourceLineNo">070</span> * entry).  Indicating that the server should always examine candidate entries<a name="line.70"></a>
+<span class="sourceLineNo">071</span> * will increase the length of time to obtain the matching entry count, but will<a name="line.71"></a>
+<span class="sourceLineNo">072</span> * ensure that the count will not include entries that would not otherwise be<a name="line.72"></a>
+<span class="sourceLineNo">073</span> * returned by that search.<a name="line.73"></a>
+<span class="sourceLineNo">074</span> * &lt;BR&gt;&lt;BR&gt;<a name="line.74"></a>
+<span class="sourceLineNo">075</span> * Also note that this control is not compatible for use with other controls<a name="line.75"></a>
+<span class="sourceLineNo">076</span> * that may cause only a subset of entries to be returned, including the simple<a name="line.76"></a>
+<span class="sourceLineNo">077</span> * paged results control and the virtual list view control.  It is also not<a name="line.77"></a>
+<span class="sourceLineNo">078</span> * compatible for use with other controls that may cause the server to return<a name="line.78"></a>
+<span class="sourceLineNo">079</span> * more entries than those that match the search criteria, like the LDAP join<a name="line.79"></a>
+<span class="sourceLineNo">080</span> * control.<a name="line.80"></a>
+<span class="sourceLineNo">081</span> * &lt;BR&gt;&lt;BR&gt;<a name="line.81"></a>
+<span class="sourceLineNo">082</span> * The OID for a matching entry count request control is<a name="line.82"></a>
+<span class="sourceLineNo">083</span> * "1.3.6.1.4.1.30221.2.5.36", and it may have a criticality of either<a name="line.83"></a>
+<span class="sourceLineNo">084</span> * {@code true} or {@code false}.  It must include a value with the following<a name="line.84"></a>
+<span class="sourceLineNo">085</span> * encoding:<a name="line.85"></a>
+<span class="sourceLineNo">086</span> * &lt;PRE&gt;<a name="line.86"></a>
+<span class="sourceLineNo">087</span> *   MatchingEntryCountRequest ::= SEQUENCE {<a name="line.87"></a>
+<span class="sourceLineNo">088</span> *        maxCandidatesToExamine           [0] INTEGER (0 .. MAX) DEFAULT 0,<a name="line.88"></a>
+<span class="sourceLineNo">089</span> *        alwaysExamineCandidates          [1] BOOLEAN DEFAULT FALSE,<a name="line.89"></a>
+<span class="sourceLineNo">090</span> *        processSearchIfUnindexed         [2] BOOLEAN DEFAULT FALSE,<a name="line.90"></a>
+<span class="sourceLineNo">091</span> *        includeDebugInfo                 [3] BOOLEAN DEFAULT FALSE,<a name="line.91"></a>
+<span class="sourceLineNo">092</span> *        skipResolvingExplodedIndexes     [4] BOOLEAN DEFAULT FALSE,<a name="line.92"></a>
+<span class="sourceLineNo">093</span> *        fastShortCircuitThreshold        [5] INTEGER (0 .. MAX) OPTIONAL,<a name="line.93"></a>
+<span class="sourceLineNo">094</span> *        slowShortCircuitThreshold        [6] INTEGER (0 .. MAX) OPTIONAL,<a name="line.94"></a>
+<span class="sourceLineNo">095</span> *        ... }<a name="line.95"></a>
+<span class="sourceLineNo">096</span> * &lt;/PRE&gt;<a name="line.96"></a>
+<span class="sourceLineNo">097</span> *<a name="line.97"></a>
+<span class="sourceLineNo">098</span> * @see  MatchingEntryCountResponseControl<a name="line.98"></a>
+<span class="sourceLineNo">099</span> */<a name="line.99"></a>
+<span class="sourceLineNo">100</span>@NotMutable()<a name="line.100"></a>
+<span class="sourceLineNo">101</span>@ThreadSafety(level=ThreadSafetyLevel.COMPLETELY_THREADSAFE)<a name="line.101"></a>
+<span class="sourceLineNo">102</span>public final class MatchingEntryCountRequestControl<a name="line.102"></a>
+<span class="sourceLineNo">103</span>       extends Control<a name="line.103"></a>
+<span class="sourceLineNo">104</span>{<a name="line.104"></a>
+<span class="sourceLineNo">105</span>  /**<a name="line.105"></a>
+<span class="sourceLineNo">106</span>   * The OID (1.3.6.1.4.1.30221.2.5.36) for the matching entry count request<a name="line.106"></a>
+<span class="sourceLineNo">107</span>   * control.<a name="line.107"></a>
+<span class="sourceLineNo">108</span>   */<a name="line.108"></a>
+<span class="sourceLineNo">109</span>  public static final String MATCHING_ENTRY_COUNT_REQUEST_OID =<a name="line.109"></a>
+<span class="sourceLineNo">110</span>       "1.3.6.1.4.1.30221.2.5.36";<a name="line.110"></a>
+<span class="sourceLineNo">111</span><a name="line.111"></a>
+<span class="sourceLineNo">112</span><a name="line.112"></a>
+<span class="sourceLineNo">113</span><a name="line.113"></a>
+<span class="sourceLineNo">114</span>  /**<a name="line.114"></a>
+<span class="sourceLineNo">115</span>   * The BER type for the element that specifies the maximum number of candidate<a name="line.115"></a>
+<span class="sourceLineNo">116</span>   * entries to examine.<a name="line.116"></a>
+<span class="sourceLineNo">117</span>   */<a name="line.117"></a>
+<span class="sourceLineNo">118</span>  private static final byte TYPE_MAX_CANDIDATES_TO_EXAMINE = (byte) 0x80;<a name="line.118"></a>
+<span class="sourceLineNo">119</span><a name="line.119"></a>
+<span class="sourceLineNo">120</span><a name="line.120"></a>
+<span class="sourceLineNo">121</span><a name="line.121"></a>
+<span class="sourceLineNo">122</span>  /**<a name="line.122"></a>
+<span class="sourceLineNo">123</span>   * The BER type for the element that indicates whether always examine<a name="line.123"></a>
+<span class="sourceLineNo">124</span>   * candidate entries to determine whether they would actually be returned to<a name="line.124"></a>
+<span class="sourceLineNo">125</span>   * the client.<a name="line.125"></a>
+<span class="sourceLineNo">126</span>   */<a name="line.126"></a>
+<span class="sourceLineNo">127</span>  private static final byte TYPE_ALWAYS_EXAMINE_CANDIDATES = (byte) 0x81;<a name="line.127"></a>
+<span class="sourceLineNo">128</span><a name="line.128"></a>
+<span class="sourceLineNo">129</span><a name="line.129"></a>
+<span class="sourceLineNo">130</span><a name="line.130"></a>
+<span class="sourceLineNo">131</span>  /**<a name="line.131"></a>
+<span class="sourceLineNo">132</span>   * The BER type for the element that indicates whether to process an unindexed<a name="line.132"></a>
+<span class="sourceLineNo">133</span>   * search to determine the number of matching entries.<a name="line.133"></a>
+<span class="sourceLineNo">134</span>   */<a name="line.134"></a>
+<span class="sourceLineNo">135</span>  private static final byte TYPE_PROCESS_SEARCH_IF_UNINDEXED = (byte) 0x82;<a name="line.135"></a>
+<span class="sourceLineNo">136</span><a name="line.136"></a>
+<span class="sourceLineNo">137</span><a name="line.137"></a>
+<span class="sourceLineNo">138</span><a name="line.138"></a>
+<span class="sourceLineNo">139</span>  /**<a name="line.139"></a>
+<span class="sourceLineNo">140</span>   * The BER type for the element that indicates whether to include debug<a name="line.140"></a>
+<span class="sourceLineNo">141</span>   * information in the response.<a name="line.141"></a>
+<span class="sourceLineNo">142</span>   */<a name="line.142"></a>
+<span class="sourceLineNo">143</span>  private static final byte TYPE_INCLUDE_DEBUG_INFO = (byte) 0x83;<a name="line.143"></a>
+<span class="sourceLineNo">144</span><a name="line.144"></a>
+<span class="sourceLineNo">145</span><a name="line.145"></a>
+<span class="sourceLineNo">146</span><a name="line.146"></a>
+<span class="sourceLineNo">147</span>  /**<a name="line.147"></a>
+<span class="sourceLineNo">148</span>   * The BER type for the element that indicates whether to skip resolving<a name="line.148"></a>
+<span class="sourceLineNo">149</span>   * exploded indexes if the number of matching entries is known.<a name="line.149"></a>
+<span class="sourceLineNo">150</span>   */<a name="line.150"></a>
+<span class="sourceLineNo">151</span>  private static final byte TYPE_SKIP_RESOLVING_EXPLODED_INDEXES = (byte) 0x84;<a name="line.151"></a>
+<span class="sourceLineNo">152</span><a name="line.152"></a>
+<span class="sourceLineNo">153</span><a name="line.153"></a>
+<span class="sourceLineNo">154</span><a name="line.154"></a>
+<span class="sourceLineNo">155</span>  /**<a name="line.155"></a>
+<span class="sourceLineNo">156</span>   * The BER type for the element that specifies the short-circuit threshold to<a name="line.156"></a>
+<span class="sourceLineNo">157</span>   * use when performing index processing that is expected to be very fast<a name="line.157"></a>
+<span class="sourceLineNo">158</span>   * (e.g., filter components that can be evaluated with a single index lookup,<a name="line.158"></a>
+<span class="sourceLineNo">159</span>   * like presence, equality, and approximate match components).<a name="line.159"></a>
+<span class="sourceLineNo">160</span>   */<a name="line.160"></a>
+<span class="sourceLineNo">161</span>  private static final byte TYPE_FAST_SHORT_CIRCUIT_THRESHOLD = (byte) 0x85;<a name="line.161"></a>
+<span class="sourceLineNo">162</span><a name="line.162"></a>
+<span class="sourceLineNo">163</span><a name="line.163"></a>
+<span class="sourceLineNo">164</span><a name="line.164"></a>
+<span class="sourceLineNo">165</span>  /**<a name="line.165"></a>
+<span class="sourceLineNo">166</span>   * The BER type for the element that specifies the short-circuit threshold to<a name="line.166"></a>
+<span class="sourceLineNo">167</span>   * use when evaluating filter components that are not covered by the fast<a name="line.167"></a>
+<span class="sourceLineNo">168</span>   * short-circuit threshold.<a name="line.168"></a>
+<span class="sourceLineNo">169</span>   */<a name="line.169"></a>
+<span class="sourceLineNo">170</span>  private static final byte TYPE_SLOW_SHORT_CIRCUIT_THRESHOLD = (byte) 0x86;<a name="line.170"></a>
+<span class="sourceLineNo">171</span><a name="line.171"></a>
+<span class="sourceLineNo">172</span><a name="line.172"></a>
+<span class="sourceLineNo">173</span><a name="line.173"></a>
+<span class="sourceLineNo">174</span>  /**<a name="line.174"></a>
+<span class="sourceLineNo">175</span>   * The serial version UID for this serializable class.<a name="line.175"></a>
+<span class="sourceLineNo">176</span>   */<a name="line.176"></a>
+<span class="sourceLineNo">177</span>  private static final long serialVersionUID = 7981532783303485308L;<a name="line.177"></a>
+<span class="sourceLineNo">178</span><a name="line.178"></a>
+<span class="sourceLineNo">179</span><a name="line.179"></a>
+<span class="sourceLineNo">180</span><a name="line.180"></a>
+<span class="sourceLineNo">181</span>  // Indicates whether the server should internally retrieve and examine<a name="line.181"></a>
+<span class="sourceLineNo">182</span>  // candidate entries to determine whether they would actually be returned to<a name="line.182"></a>
+<span class="sourceLineNo">183</span>  // the client.<a name="line.183"></a>
+<span class="sourceLineNo">184</span>  private final boolean alwaysExamineCandidates;<a name="line.184"></a>
+<span class="sourceLineNo">185</span><a name="line.185"></a>
+<span class="sourceLineNo">186</span>  // Indicates whether to include debug information in the response control.<a name="line.186"></a>
+<span class="sourceLineNo">187</span>  private final boolean includeDebugInfo;<a name="line.187"></a>
+<span class="sourceLineNo">188</span><a name="line.188"></a>
+<span class="sourceLineNo">189</span>  // Indicates whether the server should attempt to actually iterate through the<a name="line.189"></a>
+<span class="sourceLineNo">190</span>  // entries in the backend in order to obtain the count if the search criteria<a name="line.190"></a>
+<span class="sourceLineNo">191</span>  // is not indexed.<a name="line.191"></a>
+<span class="sourceLineNo">192</span>  private final boolean processSearchIfUnindexed;<a name="line.192"></a>
+<span class="sourceLineNo">193</span><a name="line.193"></a>
+<span class="sourceLineNo">194</span>  // Indicates whether the server should skip retrieving the entry ID set for<a name="line.194"></a>
+<span class="sourceLineNo">195</span>  // an exploded index key if the number of matching entries is known.<a name="line.195"></a>
+<span class="sourceLineNo">196</span>  private final boolean skipResolvingExplodedIndexes;<a name="line.196"></a>
+<span class="sourceLineNo">197</span><a name="line.197"></a>
+<span class="sourceLineNo">198</span>  // The maximum number of candidate entries that should be examined if it is<a name="line.198"></a>
+<span class="sourceLineNo">199</span>  // not possible to obtain an exact count using only information contained in<a name="line.199"></a>
+<span class="sourceLineNo">200</span>  // the server indexes.<a name="line.200"></a>
+<span class="sourceLineNo">201</span>  private final int maxCandidatesToExamine;<a name="line.201"></a>
+<span class="sourceLineNo">202</span><a name="line.202"></a>
+<span class="sourceLineNo">203</span>  // The short-circuit threshold that the server will use when evaluating filter<a name="line.203"></a>
+<span class="sourceLineNo">204</span>  // components that are not categorized as fast.<a name="line.204"></a>
+<span class="sourceLineNo">205</span>  private final Long slowShortCircuitThreshold;<a name="line.205"></a>
+<span class="sourceLineNo">206</span><a name="line.206"></a>
+<span class="sourceLineNo">207</span>  // The short-circuit threshold that the server will for index processing that<a name="line.207"></a>
+<span class="sourceLineNo">208</span>  // should be very fast.<a name="line.208"></a>
+<span class="sourceLineNo">209</span>  private final Long fastShortCircuitThreshold;<a name="line.209"></a>
+<span class="sourceLineNo">210</span><a name="line.210"></a>
+<span class="sourceLineNo">211</span><a name="line.211"></a>
+<span class="sourceLineNo">212</span><a name="line.212"></a>
+<span class="sourceLineNo">213</span>  /**<a name="line.213"></a>
+<span class="sourceLineNo">214</span>   * Creates a new matching entry count request control with the default<a name="line.214"></a>
+<span class="sourceLineNo">215</span>   * settings.  The control will be critical, no candidate entries will be<a name="line.215"></a>
+<span class="sourceLineNo">216</span>   * examined, and the search will not be processed if it is unindexed.<a name="line.216"></a>
+<span class="sourceLineNo">217</span>   */<a name="line.217"></a>
+<span class="sourceLineNo">218</span>  public MatchingEntryCountRequestControl()<a name="line.218"></a>
+<span class="sourceLineNo">219</span>  {<a name="line.219"></a>
+<span class="sourceLineNo">220</span>    this(true, 0, false, false, false);<a name="line.220"></a>
+<span class="sourceLineNo">221</span>  }<a name="line.221"></a>
+<span class="sourceLineNo">222</span><a name="line.222"></a>
+<span class="sourceLineNo">223</span><a name="line.223"></a>
+<span class="sourceLineNo">224</span><a name="line.224"></a>
+<span class="sourceLineNo">225</span>  /**<a name="line.225"></a>
+<span class="sourceLineNo">226</span>   * Creates a new matching entry count request control with the provided<a name="line.226"></a>
+<span class="sourceLineNo">227</span>   * information.<a name="line.227"></a>
+<span class="sourceLineNo">228</span>   *<a name="line.228"></a>
+<span class="sourceLineNo">229</span>   * @param  isCritical                Indicates whether this control should be<a name="line.229"></a>
+<span class="sourceLineNo">230</span>   *                                   critical.<a name="line.230"></a>
+<span class="sourceLineNo">231</span>   * @param  maxCandidatesToExamine    The maximum number of candidate entries<a name="line.231"></a>
+<span class="sourceLineNo">232</span>   *                                   that the server should retrieve and<a name="line.232"></a>
+<span class="sourceLineNo">233</span>   *                                   examine to determine whether they<a name="line.233"></a>
+<span class="sourceLineNo">234</span>   *                                   actually match the search criteria.  If<a name="line.234"></a>
+<span class="sourceLineNo">235</span>   *                                   the search is partially indexed and the<a name="line.235"></a>
+<span class="sourceLineNo">236</span>   *                                   total number of candidate entries is less<a name="line.236"></a>
+<span class="sourceLineNo">237</span>   *                                   than or equal to this value, then these<a name="line.237"></a>
+<span class="sourceLineNo">238</span>   *                                   candidate entries will be examined to<a name="line.238"></a>
+<span class="sourceLineNo">239</span>   *                                   determine which of them match the search<a name="line.239"></a>
+<span class="sourceLineNo">240</span>   *                                   criteria so that an accurate count can<a name="line.240"></a>
+<span class="sourceLineNo">241</span>   *                                   be determined.  If the search is fully<a name="line.241"></a>
+<span class="sourceLineNo">242</span>   *                                   indexed such that the all candidate<a name="line.242"></a>
+<span class="sourceLineNo">243</span>   *                                   entries are known to match the search<a name="line.243"></a>
+<span class="sourceLineNo">244</span>   *                                   criteria, then the server may still<a name="line.244"></a>
+<span class="sourceLineNo">245</span>   *                                   examine each of these entries if the<a name="line.245"></a>
+<span class="sourceLineNo">246</span>   *                                   number of candidates is less than<a name="line.246"></a>
+<span class="sourceLineNo">247</span>   *                                   {@code maxCandidatesToExamine} and<a name="line.247"></a>
+<span class="sourceLineNo">248</span>   *                                   {@code alwaysExamineCandidates} is true<a name="line.248"></a>
+<span class="sourceLineNo">249</span>   *                                   in order to allow the entry count that<a name="line.249"></a>
+<span class="sourceLineNo">250</span>   *                                   is returned to be restricted to only<a name="line.250"></a>
+<span class="sourceLineNo">251</span>   *                                   those entries that would actually be<a name="line.251"></a>
+<span class="sourceLineNo">252</span>   *                                   returned to the client.  This will be<a name="line.252"></a>
+<span class="sourceLineNo">253</span>   *                                   ignored for searches that are completely<a name="line.253"></a>
+<span class="sourceLineNo">254</span>   *                                   unindexed.<a name="line.254"></a>
+<span class="sourceLineNo">255</span>   *                                   &lt;BR&gt;&lt;BR&gt;<a name="line.255"></a>
+<span class="sourceLineNo">256</span>   *                                   The value for this argument must be<a name="line.256"></a>
+<span class="sourceLineNo">257</span>   *                                   greater than or equal to zero.  If it<a name="line.257"></a>
+<span class="sourceLineNo">258</span>   *                                   is zero, then the server will not<a name="line.258"></a>
+<span class="sourceLineNo">259</span>   *                                   examine any entries, so a<a name="line.259"></a>
+<span class="sourceLineNo">260</span>   *                                   partially-indexed search will only be<a name="line.260"></a>
+<span class="sourceLineNo">261</span>   *                                   able to return a count that is an upper<a name="line.261"></a>
+<span class="sourceLineNo">262</span>   *                                   bound, and a fully-indexed search will<a name="line.262"></a>
+<span class="sourceLineNo">263</span>   *                                   only be able to return an unexamined<a name="line.263"></a>
+<span class="sourceLineNo">264</span>   *                                   exact count.  If there should be no bound<a name="line.264"></a>
+<span class="sourceLineNo">265</span>   *                                   on the number of entries to retrieve,<a name="line.265"></a>
+<span class="sourceLineNo">266</span>   *                                   then a value of {@code Integer.MAX_VALUE}<a name="line.266"></a>
+<span class="sourceLineNo">267</span>   *                                   may be specified.<a name="line.267"></a>
+<span class="sourceLineNo">268</span>   * @param  alwaysExamineCandidates   Indicates whether the server should<a name="line.268"></a>
+<span class="sourceLineNo">269</span>   *                                   always examine candidate entries to<a name="line.269"></a>
+<span class="sourceLineNo">270</span>   *                                   determine whether they would actually<a name="line.270"></a>
+<span class="sourceLineNo">271</span>   *                                   be returned to the client in a normal<a name="line.271"></a>
+<span class="sourceLineNo">272</span>   *                                   search.  This will only be used for<a name="line.272"></a>
+<span class="sourceLineNo">273</span>   *                                   fully-indexed searches in which the<a name="line.273"></a>
+<span class="sourceLineNo">274</span>   *                                   set of matching entries is known.  If the<a name="line.274"></a>
+<span class="sourceLineNo">275</span>   *                                   value is {@code true} and the number of<a name="line.275"></a>
+<span class="sourceLineNo">276</span>   *                                   candidates is smaller than<a name="line.276"></a>
+<span class="sourceLineNo">277</span>   *                                   {@code maxCandidatesToExamine}, then each<a name="line.277"></a>
+<span class="sourceLineNo">278</span>   *                                   matching entry will be internally<a name="line.278"></a>
+<span class="sourceLineNo">279</span>   *                                   retrieved and examined to determine<a name="line.279"></a>
+<span class="sourceLineNo">280</span>   *                                   whether it would be returned to the<a name="line.280"></a>
+<span class="sourceLineNo">281</span>   *                                   client based on the details of the search<a name="line.281"></a>
+<span class="sourceLineNo">282</span>   *                                   request (e.g., whether the requester has<a name="line.282"></a>
+<span class="sourceLineNo">283</span>   *                                   permission to access the entry, whether<a name="line.283"></a>
+<span class="sourceLineNo">284</span>   *                                   it's an LDAP subentry, replication<a name="line.284"></a>
+<span class="sourceLineNo">285</span>   *                                   conflict entry, soft-deleted entry, or<a name="line.285"></a>
+<span class="sourceLineNo">286</span>   *                                   other type of entry that is normally<a name="line.286"></a>
+<span class="sourceLineNo">287</span>   *                                   hidden) so that an exact count can be<a name="line.287"></a>
+<span class="sourceLineNo">288</span>   *                                   returned.  If this is {@code false} or<a name="line.288"></a>
+<span class="sourceLineNo">289</span>   *                                   the number of candidates exceeds<a name="line.289"></a>
+<span class="sourceLineNo">290</span>   *                                   {@code maxCandidatesToExamine}, then the<a name="line.290"></a>
+<span class="sourceLineNo">291</span>   *                                   server will only be able to return an<a name="line.291"></a>
+<span class="sourceLineNo">292</span>   *                                   unexamined count which may include<a name="line.292"></a>
+<span class="sourceLineNo">293</span>   *                                   entries that match the search criteria<a name="line.293"></a>
+<span class="sourceLineNo">294</span>   *                                   but that would not normally be returned<a name="line.294"></a>
+<span class="sourceLineNo">295</span>   *                                   to the requester.<a name="line.295"></a>
+<span class="sourceLineNo">296</span>   * @param  processSearchIfUnindexed  Indicates whether the server should<a name="line.296"></a>
+<span class="sourceLineNo">297</span>   *                                   attempt to determine the number of<a name="line.297"></a>
+<span class="sourceLineNo">298</span>   *                                   matching entries if the search criteria<a name="line.298"></a>
+<span class="sourceLineNo">299</span>   *                                   is completely unindexed.  If this is<a name="line.299"></a>
+<span class="sourceLineNo">300</span>   *                                   {@code true} and the requester has the<a name="line.300"></a>
+<span class="sourceLineNo">301</span>   *                                   unindexed-search privilege, then the<a name="line.301"></a>
+<span class="sourceLineNo">302</span>   *                                   server will iterate through all entries<a name="line.302"></a>
+<span class="sourceLineNo">303</span>   *                                   in the scope (which may take a very long<a name="line.303"></a>
+<span class="sourceLineNo">304</span>   *                                   time to complete) in order to to<a name="line.304"></a>
+<span class="sourceLineNo">305</span>   *                                   determine which of them match the search<a name="line.305"></a>
+<span class="sourceLineNo">306</span>   *                                   criteria so that it can return an<a name="line.306"></a>
+<span class="sourceLineNo">307</span>   *                                   accurate count.  If this is<a name="line.307"></a>
+<span class="sourceLineNo">308</span>   *                                   {@code false} or the requester does not<a name="line.308"></a>
+<span class="sourceLineNo">309</span>   *                                   have the unindexed-search privilege, then<a name="line.309"></a>
+<span class="sourceLineNo">310</span>   *                                   the server will not spend any time<a name="line.310"></a>
+<span class="sourceLineNo">311</span>   *                                   attempting to determine the number of<a name="line.311"></a>
+<span class="sourceLineNo">312</span>   *                                   matching entries and will instead return<a name="line.312"></a>
+<span class="sourceLineNo">313</span>   *                                   a matching entry count response control<a name="line.313"></a>
+<span class="sourceLineNo">314</span>   *                                   indicating that the entry count is<a name="line.314"></a>
+<span class="sourceLineNo">315</span>   *                                   unknown.<a name="line.315"></a>
+<span class="sourceLineNo">316</span>   * @param  includeDebugInfo          Indicates whether the server should<a name="line.316"></a>
+<span class="sourceLineNo">317</span>   *                                   include debug information in the response<a name="line.317"></a>
+<span class="sourceLineNo">318</span>   *                                   that may help better understand how it<a name="line.318"></a>
+<span class="sourceLineNo">319</span>   *                                   arrived at the result.  If any debug<a name="line.319"></a>
+<span class="sourceLineNo">320</span>   *                                   information is returned, it will be in<a name="line.320"></a>
+<span class="sourceLineNo">321</span>   *                                   the form of human-readable text that is<a name="line.321"></a>
+<span class="sourceLineNo">322</span>   *                                   not intended to be machine-parsable.<a name="line.322"></a>
+<span class="sourceLineNo">323</span>   */<a name="line.323"></a>
+<span class="sourceLineNo">324</span>  public MatchingEntryCountRequestControl(final boolean isCritical,<a name="line.324"></a>
+<span class="sourceLineNo">325</span>              final int maxCandidatesToExamine,<a name="line.325"></a>
+<span class="sourceLineNo">326</span>              final boolean alwaysExamineCandidates,<a name="line.326"></a>
+<span class="sourceLineNo">327</span>              final boolean processSearchIfUnindexed,<a name="line.327"></a>
+<span class="sourceLineNo">328</span>              final boolean includeDebugInfo)<a name="line.328"></a>
+<span class="sourceLineNo">329</span>  {<a name="line.329"></a>
+<span class="sourceLineNo">330</span>    this(isCritical, maxCandidatesToExamine, alwaysExamineCandidates,<a name="line.330"></a>
+<span class="sourceLineNo">331</span>         processSearchIfUnindexed, false, null, null, includeDebugInfo);<a name="line.331"></a>
+<span class="sourceLineNo">332</span>  }<a name="line.332"></a>
+<span class="sourceLineNo">333</span><a name="line.333"></a>
+<span class="sourceLineNo">334</span><a name="line.334"></a>
+<span class="sourceLineNo">335</span><a name="line.335"></a>
+<span class="sourceLineNo">336</span>  /**<a name="line.336"></a>
+<span class="sourceLineNo">337</span>   * Creates a new matching entry count request control with the provided<a name="line.337"></a>
+<span class="sourceLineNo">338</span>   * information.<a name="line.338"></a>
+<span class="sourceLineNo">339</span>   *<a name="line.339"></a>
+<span class="sourceLineNo">340</span>   * @param  isCritical                    Indicates whether this control should<a name="line.340"></a>
+<span class="sourceLineNo">341</span>   *                                       be critical.<a name="line.341"></a>
+<span class="sourceLineNo">342</span>   * @param  maxCandidatesToExamine        The maximum number of candidate<a name="line.342"></a>
+<span class="sourceLineNo">343</span>   *                                       entries that the server should<a name="line.343"></a>
+<span class="sourceLineNo">344</span>   *                                       retrieve and examine to determine<a name="line.344"></a>
+<span class="sourceLineNo">345</span>   *                                       whether they actually match the<a name="line.345"></a>
+<span class="sourceLineNo">346</span>   *                                       search criteria.  If the search is<a name="line.346"></a>
+<span class="sourceLineNo">347</span>   *                                       partially indexed and the total<a name="line.347"></a>
+<span class="sourceLineNo">348</span>   *                                       number of candidate entries is less<a name="line.348"></a>
+<span class="sourceLineNo">349</span>   *                                       than or equal to this value, then<a name="line.349"></a>
+<span class="sourceLineNo">350</span>   *                                       these candidate entries will be<a name="line.350"></a>
+<span class="sourceLineNo">351</span>   *                                       examined to determine which of them<a name="line.351"></a>
+<span class="sourceLineNo">352</span>   *                                       match the search criteria so that an<a name="line.352"></a>
+<span class="sourceLineNo">353</span>   *                                       accurate count can be determined.  If<a name="line.353"></a>
+<span class="sourceLineNo">354</span>   *                                       the search is fully indexed such that<a name="line.354"></a>
+<span class="sourceLineNo">355</span>   *                                       the all candidate entries are known<a name="line.355"></a>
+<span class="sourceLineNo">356</span>   *                                       to match the search criteria, then<a name="line.356"></a>
+<span class="sourceLineNo">357</span>   *                                       the server may still examine each of<a name="line.357"></a>
+<span class="sourceLineNo">358</span>   *                                       these entries if the number of<a name="line.358"></a>
+<span class="sourceLineNo">359</span>   *                                       candidates is less than<a name="line.359"></a>
+<span class="sourceLineNo">360</span>   *                                       {@code maxCandidatesToExamine} and<a name="line.360"></a>
+<span class="sourceLineNo">361</span>   *                                       {@code alwaysExamineCandidates} is<a name="line.361"></a>
+<span class="sourceLineNo">362</span>   *                                       true in order to allow the entry<a name="line.362"></a>
+<span class="sourceLineNo">363</span>   *                                       count that is returned to be<a name="line.363"></a>
+<span class="sourceLineNo">364</span>   *                                       restricted to only those entries that<a name="line.364"></a>
+<span class="sourceLineNo">365</span>   *                                       would actually be returned to the<a name="line.365"></a>
+<span class="sourceLineNo">366</span>   *                                       client.  This will be ignored for<a name="line.366"></a>
+<span class="sourceLineNo">367</span>   *                                       searches that are completely<a name="line.367"></a>
+<span class="sourceLineNo">368</span>   *                                       unindexed.<a name="line.368"></a>
+<span class="sourceLineNo">369</span>   *                                       &lt;BR&gt;&lt;BR&gt;<a name="line.369"></a>
+<span class="sourceLineNo">370</span>   *                                       The value for this argument must be<a name="line.370"></a>
+<span class="sourceLineNo">371</span>   *                                       greater than or equal to zero.  If it<a name="line.371"></a>
+<span class="sourceLineNo">372</span>   *                                       is zero, then the server will not<a name="line.372"></a>
+<span class="sourceLineNo">373</span>   *                                       examine any entries, so a<a name="line.373"></a>
+<span class="sourceLineNo">374</span>   *                                       partially-indexed search will only be<a name="line.374"></a>
+<span class="sourceLineNo">375</span>   *                                       able to return a count that is an<a name="line.375"></a>
+<span class="sourceLineNo">376</span>   *                                       upper bound, and a fully-indexed<a name="line.376"></a>
+<span class="sourceLineNo">377</span>   *                                       search will only be able to return an<a name="line.377"></a>
+<span class="sourceLineNo">378</span>   *                                       unexamined exact count.  If there<a name="line.378"></a>
+<span class="sourceLineNo">379</span>   *                                       should be no bound on the number of<a name="line.379"></a>
+<span class="sourceLineNo">380</span>   *                                       entries to retrieve, then a value of<a name="line.380"></a>
+<span class="sourceLineNo">381</span>   *                                       {@code Integer.MAX_VALUE} may be<a name="line.381"></a>
+<span class="sourceLineNo">382</span>   *                                       specified.<a name="line.382"></a>
+<span class="sourceLineNo">383</span>   * @param  alwaysExamineCandidates       Indicates whether the server should<a name="line.383"></a>
+<span class="sourceLineNo">384</span>   *                                       always examine candidate entries to<a name="line.384"></a>
+<span class="sourceLineNo">385</span>   *                                       determine whether they would actually<a name="line.385"></a>
+<span class="sourceLineNo">386</span>   *                                       be returned to the client in a normal<a name="line.386"></a>
+<span class="sourceLineNo">387</span>   *                                       search.  This will only be used for<a name="line.387"></a>
+<span class="sourceLineNo">388</span>   *                                       fully-indexed searches in which the<a name="line.388"></a>
+<span class="sourceLineNo">389</span>   *                                       set of matching entries is known.  If<a name="line.389"></a>
+<span class="sourceLineNo">390</span>   *                                       the value is {@code true} and the<a name="line.390"></a>
+<span class="sourceLineNo">391</span>   *                                       number of candidates is smaller than<a name="line.391"></a>
+<span class="sourceLineNo">392</span>   *                                       {@code maxCandidatesToExamine}, then<a name="line.392"></a>
+<span class="sourceLineNo">393</span>   *                                       each matching entry will be<a name="line.393"></a>
+<span class="sourceLineNo">394</span>   *                                       internally retrieved and examined to<a name="line.394"></a>
+<span class="sourceLineNo">395</span>   *                                       determine whether it would be<a name="line.395"></a>
+<span class="sourceLineNo">396</span>   *                                       returned to the client based on the<a name="line.396"></a>
+<span class="sourceLineNo">397</span>   *                                       details of the search request (e.g.,<a name="line.397"></a>
+<span class="sourceLineNo">398</span>   *                                       whether the requester has permission<a name="line.398"></a>
+<span class="sourceLineNo">399</span>   *                                       to access the entry, whether it's an<a name="line.399"></a>
+<span class="sourceLineNo">400</span>   *                                       LDAP subentry, replication conflict<a name="line.400"></a>
+<span class="sourceLineNo">401</span>   *                                       entry, soft-deleted entry, or other<a name="line.401"></a>
+<span class="sourceLineNo">402</span>   *                                       type of entry that is normally<a name="line.402"></a>
+<span class="sourceLineNo">403</span>   *                                       hidden) so that an exact count can be<a name="line.403"></a>
+<span class="sourceLineNo">404</span>   *                                       returned.  If this is {@code false}<a name="line.404"></a>
+<span class="sourceLineNo">405</span>   *                                       or the number of candidates exceeds<a name="line.405"></a>
+<span class="sourceLineNo">406</span>   *                                       {@code maxCandidatesToExamine}, then<a name="line.406"></a>
+<span class="sourceLineNo">407</span>   *                                       the server will only be able to<a name="line.407"></a>
+<span class="sourceLineNo">408</span>   *                                       return an unexamined count which may<a name="line.408"></a>
+<span class="sourceLineNo">409</span>   *                                       include entries that match the search<a name="line.409"></a>
+<span class="sourceLineNo">410</span>   *                                       criteria but that would not normally<a name="line.410"></a>
+<span class="sourceLineNo">411</span>   *                                       be returned to the requester.<a name="line.411"></a>
+<span class="sourceLineNo">412</span>   * @param  processSearchIfUnindexed      Indicates whether the server should<a name="line.412"></a>
+<span class="sourceLineNo">413</span>   *                                       attempt to determine the number of<a name="line.413"></a>
+<span class="sourceLineNo">414</span>   *                                       matching entries if the search<a name="line.414"></a>
+<span class="sourceLineNo">415</span>   *                                       criteria is completely unindexed.  If<a name="line.415"></a>
+<span class="sourceLineNo">416</span>   *                                       this is {@code true} and the<a name="line.416"></a>
+<span class="sourceLineNo">417</span>   *                                       requester has the unindexed-search<a name="line.417"></a>
+<span class="sourceLineNo">418</span>   *                                       privilege, then the server will<a name="line.418"></a>
+<span class="sourceLineNo">419</span>   *                                       iterate through all entries in the<a name="line.419"></a>
+<span class="sourceLineNo">420</span>   *                                       scope (which may take a very long<a name="line.420"></a>
+<span class="sourceLineNo">421</span>   *                                       time to complete) in order to to<a name="line.421"></a>
+<span class="sourceLineNo">422</span>   *                                       determine which of them match the<a name="line.422"></a>
+<span class="sourceLineNo">423</span>   *                                       search criteria so that it can return<a name="line.423"></a>
+<span class="sourceLineNo">424</span>   *                                       an accurate count.  If this is<a name="line.424"></a>
+<span class="sourceLineNo">425</span>   *                                       {@code false} or the requester does<a name="line.425"></a>
+<span class="sourceLineNo">426</span>   *                                       not have the unindexed-search<a name="line.426"></a>
+<span class="sourceLineNo">427</span>   *                                       privilege, then the server will not<a name="line.427"></a>
+<span class="sourceLineNo">428</span>   *                                       spend any time attempting to<a name="line.428"></a>
+<span class="sourceLineNo">429</span>   *                                       determine the number of matching<a name="line.429"></a>
+<span class="sourceLineNo">430</span>   *                                       entries and will instead return a<a name="line.430"></a>
+<span class="sourceLineNo">431</span>   *                                       matching entry count response control<a name="line.431"></a>
+<span class="sourceLineNo">432</span>   *                                       indicating that the entry count is<a name="line.432"></a>
+<span class="sourceLineNo">433</span>   *                                       unknown.<a name="line.433"></a>
+<span class="sourceLineNo">434</span>   * @param  skipResolvingExplodedIndexes  Indicates whether the server should<a name="line.434"></a>
+<span class="sourceLineNo">435</span>   *                                       skip the effort of actually<a name="line.435"></a>
+<span class="sourceLineNo">436</span>   *                                       retrieving the candidate entry IDs<a name="line.436"></a>
+<span class="sourceLineNo">437</span>   *                                       for exploded index keys in which the<a name="line.437"></a>
+<span class="sourceLineNo">438</span>   *                                       number of matching entries is known.<a name="line.438"></a>
+<span class="sourceLineNo">439</span>   *                                       Skipping the process of retrieving<a name="line.439"></a>
+<span class="sourceLineNo">440</span>   *                                       the candidate entry IDs can allow the<a name="line.440"></a>
+<span class="sourceLineNo">441</span>   *                                       server to more quickly estimate the<a name="line.441"></a>
+<span class="sourceLineNo">442</span>   *                                       matching entry count, but the<a name="line.442"></a>
+<span class="sourceLineNo">443</span>   *                                       resulting estimate may be less<a name="line.443"></a>
+<span class="sourceLineNo">444</span>   *                                       accurate.<a name="line.444"></a>
+<span class="sourceLineNo">445</span>   * @param  fastShortCircuitThreshold     Specifies the short-circuit threshold<a name="line.445"></a>
+<span class="sourceLineNo">446</span>   *                                       that the server should use when<a name="line.446"></a>
+<span class="sourceLineNo">447</span>   *                                       determining whether to continue with<a name="line.447"></a>
+<span class="sourceLineNo">448</span>   *                                       index processing in an attempt to<a name="line.448"></a>
+<span class="sourceLineNo">449</span>   *                                       further pare down a candidate set<a name="line.449"></a>
+<span class="sourceLineNo">450</span>   *                                       that already has a defined superset<a name="line.450"></a>
+<span class="sourceLineNo">451</span>   *                                       of the entries that actually match<a name="line.451"></a>
+<span class="sourceLineNo">452</span>   *                                       the filter.  Short-circuiting may<a name="line.452"></a>
+<span class="sourceLineNo">453</span>   *                                       allow the server to skip<a name="line.453"></a>
+<span class="sourceLineNo">454</span>   *                                       potentially-costly index processing<a name="line.454"></a>
+<span class="sourceLineNo">455</span>   *                                       and allow it to obtain the matching<a name="line.455"></a>
+<span class="sourceLineNo">456</span>   *                                       entry count estimate faster, but the<a name="line.456"></a>
+<span class="sourceLineNo">457</span>   *                                       resulting estimate may be less<a name="line.457"></a>
+<span class="sourceLineNo">458</span>   *                                       accurate.  The fast short-circuit<a name="line.458"></a>
+<span class="sourceLineNo">459</span>   *                                       threshold will be used for index<a name="line.459"></a>
+<span class="sourceLineNo">460</span>   *                                       processing that is expected to be<a name="line.460"></a>
+<span class="sourceLineNo">461</span>   *                                       very fast (e.g., when performing<a name="line.461"></a>
+<span class="sourceLineNo">462</span>   *                                       index lookups for presence, equality,<a name="line.462"></a>
+<span class="sourceLineNo">463</span>   *                                       and approximate-match components,<a name="line.463"></a>
+<span class="sourceLineNo">464</span>   *                                       which should only require accessing a<a name="line.464"></a>
+<span class="sourceLineNo">465</span>   *                                       single index key).  A value that is<a name="line.465"></a>
+<span class="sourceLineNo">466</span>   *                                       less than or equal to zero indicates<a name="line.466"></a>
+<span class="sourceLineNo">467</span>   *                                       that the server should never short<a name="line.467"></a>
+<span class="sourceLineNo">468</span>   *                                       circuit when performing fast index<a name="line.468"></a>
+<span class="sourceLineNo">469</span>   *                                       processing.  A value of {@code null}<a name="line.469"></a>
+<span class="sourceLineNo">470</span>   *                                       indicates that the server should<a name="line.470"></a>
+<span class="sourceLineNo">471</span>   *                                       determine the appropriate fast<a name="line.471"></a>
+<span class="sourceLineNo">472</span>   *                                       short-circuit threshold to use.<a name="line.472"></a>
+<span class="sourceLineNo">473</span>   * @param  slowShortCircuitThreshold     Specifies the short-circuit threshold<a name="line.473"></a>
+<span class="sourceLineNo">474</span>   *                                       that the server should use when<a name="line.474"></a>
+<span class="sourceLineNo">475</span>   *                                       determining whether to continue with<a name="line.475"></a>
+<span class="sourceLineNo">476</span>   *                                       index processing for evaluation that<a name="line.476"></a>
+<span class="sourceLineNo">477</span>   *                                       may be more expensive than what falls<a name="line.477"></a>
+<span class="sourceLineNo">478</span>   *                                       into the "fast" category (e.g.,<a name="line.478"></a>
+<span class="sourceLineNo">479</span>   *                                       substring and range filter<a name="line.479"></a>
+<span class="sourceLineNo">480</span>   *                                       components).  A value that is less<a name="line.480"></a>
+<span class="sourceLineNo">481</span>   *                                       than or equal to zero indicates that<a name="line.481"></a>
+<span class="sourceLineNo">482</span>   *                                       the server should never short circuit<a name="line.482"></a>
+<span class="sourceLineNo">483</span>   *                                       when performing slow index<a name="line.483"></a>
+<span class="sourceLineNo">484</span>   *                                       processing.  A value of {@code null}<a name="line.484"></a>
+<span class="sourceLineNo">485</span>   *                                       indicates that the server should<a name="line.485"></a>
+<span class="sourceLineNo">486</span>   *                                       determine the appropriate fast<a name="line.486"></a>
+<span class="sourceLineNo">487</span>   *                                       short-circuit threshold to use.<a name="line.487"></a>
+<span class="sourceLineNo">488</span>   * @param  includeDebugInfo              Indicates whether the server should<a name="line.488"></a>
+<span class="sourceLineNo">489</span>   *                                       include debug information in the<a name="line.489"></a>
+<span class="sourceLineNo">490</span>   *                                       response that may help better<a name="line.490"></a>
+<span class="sourceLineNo">491</span>   *                                       understand how it arrived at the<a name="line.491"></a>
+<span class="sourceLineNo">492</span>   *                                       result.  If any debug information is<a name="line.492"></a>
+<span class="sourceLineNo">493</span>   *                                       returned, it will be in the form of<a name="line.493"></a>
+<span class="sourceLineNo">494</span>   *                                       human-readable text that is not<a name="line.494"></a>
+<span class="sourceLineNo">495</span>   *                                       intended to be machine-parsable.<a name="line.495"></a>
+<span class="sourceLineNo">496</span>   */<a name="line.496"></a>
+<span class="sourceLineNo">497</span>  public MatchingEntryCountRequestControl(final boolean isCritical,<a name="line.497"></a>
+<span class="sourceLineNo">498</span>              final int maxCandidatesToExamine,<a name="line.498"></a>
+<span class="sourceLineNo">499</span>              final boolean alwaysExamineCandidates,<a name="line.499"></a>
+<span class="sourceLineNo">500</span>              final boolean processSearchIfUnindexed,<a name="line.500"></a>
+<span class="sourceLineNo">501</span>              final boolean skipResolvingExplodedIndexes,<a name="line.501"></a>
+<span class="sourceLineNo">502</span>              final Long fastShortCircuitThreshold,<a name="line.502"></a>
+<span class="sourceLineNo">503</span>              final Long slowShortCircuitThreshold,<a name="line.503"></a>
+<span class="sourceLineNo">504</span>              final boolean includeDebugInfo)<a name="line.504"></a>
+<span class="sourceLineNo">505</span>  {<a name="line.505"></a>
+<span class="sourceLineNo">506</span>    super(MATCHING_ENTRY_COUNT_REQUEST_OID, isCritical,<a name="line.506"></a>
+<span class="sourceLineNo">507</span>         encodeValue(maxCandidatesToExamine, alwaysExamineCandidates,<a name="line.507"></a>
+<span class="sourceLineNo">508</span>              processSearchIfUnindexed, skipResolvingExplodedIndexes,<a name="line.508"></a>
+<span class="sourceLineNo">509</span>              fastShortCircuitThreshold, slowShortCircuitThreshold,<a name="line.509"></a>
+<span class="sourceLineNo">510</span>              includeDebugInfo));<a name="line.510"></a>
+<span class="sourceLineNo">511</span><a name="line.511"></a>
+<span class="sourceLineNo">512</span>    Validator.ensureTrue(maxCandidatesToExamine &gt;= 0);<a name="line.512"></a>
+<span class="sourceLineNo">513</span><a name="line.513"></a>
+<span class="sourceLineNo">514</span>    this.maxCandidatesToExamine       = maxCandidatesToExamine;<a name="line.514"></a>
+<span class="sourceLineNo">515</span>    this.alwaysExamineCandidates      = alwaysExamineCandidates;<a name="line.515"></a>
+<span class="sourceLineNo">516</span>    this.processSearchIfUnindexed     = processSearchIfUnindexed;<a name="line.516"></a>
+<span class="sourceLineNo">517</span>    this.skipResolvingExplodedIndexes = skipResolvingExplodedIndexes;<a name="line.517"></a>
+<span class="sourceLineNo">518</span>    this.includeDebugInfo             = includeDebugInfo;<a name="line.518"></a>
+<span class="sourceLineNo">519</span><a name="line.519"></a>
+<span class="sourceLineNo">520</span>    if (fastShortCircuitThreshold == null)<a name="line.520"></a>
+<span class="sourceLineNo">521</span>    {<a name="line.521"></a>
+<span class="sourceLineNo">522</span>      this.fastShortCircuitThreshold = null;<a name="line.522"></a>
+<span class="sourceLineNo">523</span>    }<a name="line.523"></a>
+<span class="sourceLineNo">524</span>    else<a name="line.524"></a>
+<span class="sourceLineNo">525</span>    {<a name="line.525"></a>
+<span class="sourceLineNo">526</span>      this.fastShortCircuitThreshold = Math.max(0L, fastShortCircuitThreshold);<a name="line.526"></a>
+<span class="sourceLineNo">527</span>    }<a name="line.527"></a>
+<span class="sourceLineNo">528</span><a name="line.528"></a>
+<span class="sourceLineNo">529</span>    if (slowShortCircuitThreshold == null)<a name="line.529"></a>
+<span class="sourceLineNo">530</span>    {<a name="line.530"></a>
+<span class="sourceLineNo">531</span>      this.slowShortCircuitThreshold = null;<a name="line.531"></a>
+<span class="sourceLineNo">532</span>    }<a name="line.532"></a>
+<span class="sourceLineNo">533</span>    else<a name="line.533"></a>
+<span class="sourceLineNo">534</span>    {<a name="line.534"></a>
+<span class="sourceLineNo">535</span>      this.slowShortCircuitThreshold = Math.max(0L, slowShortCircuitThreshold);<a name="line.535"></a>
+<span class="sourceLineNo">536</span>    }<a name="line.536"></a>
+<span class="sourceLineNo">537</span>  }<a name="line.537"></a>
+<span class="sourceLineNo">538</span><a name="line.538"></a>
+<span class="sourceLineNo">539</span><a name="line.539"></a>
+<span class="sourceLineNo">540</span><a name="line.540"></a>
+<span class="sourceLineNo">541</span>  /**<a name="line.541"></a>
+<span class="sourceLineNo">542</span>   * Creates a new matching entry count request control that is decoded from the<a name="line.542"></a>
+<span class="sourceLineNo">543</span>   * provided generic control.<a name="line.543"></a>
+<span class="sourceLineNo">544</span>   *<a name="line.544"></a>
+<span class="sourceLineNo">545</span>   * @param  control  The control to decode as a matching entry count request<a name="line.545"></a>
+<span class="sourceLineNo">546</span>   *                  control.<a name="line.546"></a>
+<span class="sourceLineNo">547</span>   *<a name="line.547"></a>
+<span class="sourceLineNo">548</span>   * @throws  LDAPException  If the provided control cannot be decoded as a<a name="line.548"></a>
+<span class="sourceLineNo">549</span>   *                         matching entry count request control.<a name="line.549"></a>
+<span class="sourceLineNo">550</span>   */<a name="line.550"></a>
+<span class="sourceLineNo">551</span>  public MatchingEntryCountRequestControl(final Control control)<a name="line.551"></a>
+<span class="sourceLineNo">552</span>         throws LDAPException<a name="line.552"></a>
+<span class="sourceLineNo">553</span>  {<a name="line.553"></a>
+<span class="sourceLineNo">554</span>    super(control);<a name="line.554"></a>
+<span class="sourceLineNo">555</span><a name="line.555"></a>
+<span class="sourceLineNo">556</span>    final ASN1OctetString value = control.getValue();<a name="line.556"></a>
+<span class="sourceLineNo">557</span>    if (value == null)<a name="line.557"></a>
+<span class="sourceLineNo">558</span>    {<a name="line.558"></a>
+<span class="sourceLineNo">559</span>      throw new LDAPException(ResultCode.DECODING_ERROR,<a name="line.559"></a>
+<span class="sourceLineNo">560</span>           ERR_MATCHING_ENTRY_COUNT_REQUEST_MISSING_VALUE.get());<a name="line.560"></a>
+<span class="sourceLineNo">561</span>    }<a name="line.561"></a>
+<span class="sourceLineNo">562</span><a name="line.562"></a>
+<span class="sourceLineNo">563</span>    try<a name="line.563"></a>
+<span class="sourceLineNo">564</span>    {<a name="line.564"></a>
+<span class="sourceLineNo">565</span>      boolean alwaysExamine    = false;<a name="line.565"></a>
+<span class="sourceLineNo">566</span>      boolean debug            = false;<a name="line.566"></a>
+<span class="sourceLineNo">567</span>      boolean processUnindexed = false;<a name="line.567"></a>
+<span class="sourceLineNo">568</span>      boolean skipExploded     = false;<a name="line.568"></a>
+<span class="sourceLineNo">569</span>      int     maxCandidates    = 0;<a name="line.569"></a>
+<span class="sourceLineNo">570</span>      Long    fastSCThreshold  = null;<a name="line.570"></a>
+<span class="sourceLineNo">571</span>      Long    slowSCThreshold  = null;<a name="line.571"></a>
+<span class="sourceLineNo">572</span>      final ASN1Element[] elements =<a name="line.572"></a>
+<span class="sourceLineNo">573</span>           ASN1Sequence.decodeAsSequence(value.getValue()).elements();<a name="line.573"></a>
+<span class="sourceLineNo">574</span>      for (final ASN1Element e : elements)<a name="line.574"></a>
+<span class="sourceLineNo">575</span>      {<a name="line.575"></a>
+<span class="sourceLineNo">576</span>        switch (e.getType())<a name="line.576"></a>
+<span class="sourceLineNo">577</span>        {<a name="line.577"></a>
+<span class="sourceLineNo">578</span>          case TYPE_MAX_CANDIDATES_TO_EXAMINE:<a name="line.578"></a>
+<span class="sourceLineNo">579</span>            maxCandidates = ASN1Integer.decodeAsInteger(e).intValue();<a name="line.579"></a>
+<span class="sourceLineNo">580</span>            if (maxCandidates &lt; 0)<a name="line.580"></a>
+<span class="sourceLineNo">581</span>            {<a name="line.581"></a>
+<span class="sourceLineNo">582</span>              throw new LDAPException(ResultCode.DECODING_ERROR,<a name="line.582"></a>
+<span class="sourceLineNo">583</span>                   ERR_MATCHING_ENTRY_COUNT_REQUEST_INVALID_MAX.get());<a name="line.583"></a>
+<span class="sourceLineNo">584</span>            }<a name="line.584"></a>
+<span class="sourceLineNo">585</span>            break;<a name="line.585"></a>
+<span class="sourceLineNo">586</span><a name="line.586"></a>
+<span class="sourceLineNo">587</span>          case TYPE_ALWAYS_EXAMINE_CANDIDATES:<a name="line.587"></a>
+<span class="sourceLineNo">588</span>            alwaysExamine = ASN1Boolean.decodeAsBoolean(e).booleanValue();<a name="line.588"></a>
+<span class="sourceLineNo">589</span>            break;<a name="line.589"></a>
+<span class="sourceLineNo">590</span><a name="line.590"></a>
+<span class="sourceLineNo">591</span>          case TYPE_PROCESS_SEARCH_IF_UNINDEXED:<a name="line.591"></a>
+<span class="sourceLineNo">592</span>            processUnindexed = ASN1Boolean.decodeAsBoolean(e).booleanValue();<a name="line.592"></a>
+<span class="sourceLineNo">593</span>            break;<a name="line.593"></a>
+<span class="sourceLineNo">594</span><a name="line.594"></a>
+<span class="sourceLineNo">595</span>          case TYPE_INCLUDE_DEBUG_INFO:<a name="line.595"></a>
+<span class="sourceLineNo">596</span>            debug = ASN1Boolean.decodeAsBoolean(e).booleanValue();<a name="line.596"></a>
+<span class="sourceLineNo">597</span>            break;<a name="line.597"></a>
+<span class="sourceLineNo">598</span><a name="line.598"></a>
+<span class="sourceLineNo">599</span>          case TYPE_SKIP_RESOLVING_EXPLODED_INDEXES:<a name="line.599"></a>
+<span class="sourceLineNo">600</span>            skipExploded = ASN1Boolean.decodeAsBoolean(e).booleanValue();<a name="line.600"></a>
+<span class="sourceLineNo">601</span>            break;<a name="line.601"></a>
+<span class="sourceLineNo">602</span><a name="line.602"></a>
+<span class="sourceLineNo">603</span>          case TYPE_FAST_SHORT_CIRCUIT_THRESHOLD:<a name="line.603"></a>
+<span class="sourceLineNo">604</span>            fastSCThreshold =<a name="line.604"></a>
+<span class="sourceLineNo">605</span>                 Math.max(0L, ASN1Long.decodeAsLong(e).longValue());<a name="line.605"></a>
+<span class="sourceLineNo">606</span>            break;<a name="line.606"></a>
+<span class="sourceLineNo">607</span><a name="line.607"></a>
+<span class="sourceLineNo">608</span>          case TYPE_SLOW_SHORT_CIRCUIT_THRESHOLD:<a name="line.608"></a>
+<span class="sourceLineNo">609</span>            slowSCThreshold =<a name="line.609"></a>
+<span class="sourceLineNo">610</span>                 Math.max(0L, ASN1Long.decodeAsLong(e).longValue());<a name="line.610"></a>
+<span class="sourceLineNo">611</span>            break;<a name="line.611"></a>
+<span class="sourceLineNo">612</span><a name="line.612"></a>
+<span class="sourceLineNo">613</span>          default:<a name="line.613"></a>
+<span class="sourceLineNo">614</span>            throw new LDAPException(ResultCode.DECODING_ERROR,<a name="line.614"></a>
+<span class="sourceLineNo">615</span>                 ERR_MATCHING_ENTRY_COUNT_REQUEST_INVALID_ELEMENT_TYPE.get(<a name="line.615"></a>
+<span class="sourceLineNo">616</span>                      StaticUtils.toHex(e.getType())));<a name="line.616"></a>
+<span class="sourceLineNo">617</span>        }<a name="line.617"></a>
+<span class="sourceLineNo">618</span>      }<a name="line.618"></a>
+<span class="sourceLineNo">619</span><a name="line.619"></a>
+<span class="sourceLineNo">620</span>      maxCandidatesToExamine       = maxCandidates;<a name="line.620"></a>
+<span class="sourceLineNo">621</span>      alwaysExamineCandidates      = alwaysExamine;<a name="line.621"></a>
+<span class="sourceLineNo">622</span>      processSearchIfUnindexed     = processUnindexed;<a name="line.622"></a>
+<span class="sourceLineNo">623</span>      includeDebugInfo             = debug;<a name="line.623"></a>
+<span class="sourceLineNo">624</span>      skipResolvingExplodedIndexes = skipExploded;<a name="line.624"></a>
+<span class="sourceLineNo">625</span>      fastShortCircuitThreshold    = fastSCThreshold;<a name="line.625"></a>
+<span class="sourceLineNo">626</span>      slowShortCircuitThreshold    = slowSCThreshold;<a name="line.626"></a>
+<span class="sourceLineNo">627</span>    }<a name="line.627"></a>
+<span class="sourceLineNo">628</span>    catch (final LDAPException le)<a name="line.628"></a>
+<span class="sourceLineNo">629</span>    {<a name="line.629"></a>
+<span class="sourceLineNo">630</span>      Debug.debugException(le);<a name="line.630"></a>
+<span class="sourceLineNo">631</span>      throw le;<a name="line.631"></a>
+<span class="sourceLineNo">632</span>    }<a name="line.632"></a>
+<span class="sourceLineNo">633</span>    catch (final Exception e)<a name="line.633"></a>
+<span class="sourceLineNo">634</span>    {<a name="line.634"></a>
+<span class="sourceLineNo">635</span>      Debug.debugException(e);<a name="line.635"></a>
+<span class="sourceLineNo">636</span>      throw new LDAPException(ResultCode.DECODING_ERROR,<a name="line.636"></a>
+<span class="sourceLineNo">637</span>           ERR_MATCHING_ENTRY_COUNT_REQUEST_CANNOT_DECODE.get(<a name="line.637"></a>
+<span class="sourceLineNo">638</span>                StaticUtils.getExceptionMessage(e)),<a name="line.638"></a>
+<span class="sourceLineNo">639</span>           e);<a name="line.639"></a>
+<span class="sourceLineNo">640</span>    }<a name="line.640"></a>
+<span class="sourceLineNo">641</span>  }<a name="line.641"></a>
+<span class="sourceLineNo">642</span><a name="line.642"></a>
+<span class="sourceLineNo">643</span><a name="line.643"></a>
+<span class="sourceLineNo">644</span><a name="line.644"></a>
+<span class="sourceLineNo">645</span>  /**<a name="line.645"></a>
+<span class="sourceLineNo">646</span>   * Encodes the provided information into an ASN.1 octet string suitable for<a name="line.646"></a>
+<span class="sourceLineNo">647</span>   * use as the control value.<a name="line.647"></a>
+<span class="sourceLineNo">648</span>   *<a name="line.648"></a>
+<span class="sourceLineNo">649</span>   * @param  maxCandidatesToExamine        The maximum number of candidate<a name="line.649"></a>
+<span class="sourceLineNo">650</span>   *                                       entries that the server should<a name="line.650"></a>
+<span class="sourceLineNo">651</span>   *                                       retrieve and examine to determine<a name="line.651"></a>
+<span class="sourceLineNo">652</span>   *                                       whether they actually match the<a name="line.652"></a>
+<span class="sourceLineNo">653</span>   *                                       search criteria.<a name="line.653"></a>
+<span class="sourceLineNo">654</span>   * @param  alwaysExamineCandidates       Indicates whether the server should<a name="line.654"></a>
+<span class="sourceLineNo">655</span>   *                                       always examine candidate entries to<a name="line.655"></a>
+<span class="sourceLineNo">656</span>   *                                       determine whether they would actually<a name="line.656"></a>
+<span class="sourceLineNo">657</span>   *                                       be returned to the client in a normal<a name="line.657"></a>
+<span class="sourceLineNo">658</span>   *                                       search with the same criteria.<a name="line.658"></a>
+<span class="sourceLineNo">659</span>   * @param  processSearchIfUnindexed      Indicates whether the server should<a name="line.659"></a>
+<span class="sourceLineNo">660</span>   *                                       attempt to determine the number of<a name="line.660"></a>
+<span class="sourceLineNo">661</span>   *                                       matching entries if the search<a name="line.661"></a>
+<span class="sourceLineNo">662</span>   *                                       criteria is completely unindexed.<a name="line.662"></a>
+<span class="sourceLineNo">663</span>   * @param  skipResolvingExplodedIndexes  Indicates whether the server should<a name="line.663"></a>
+<span class="sourceLineNo">664</span>   *                                       skip the effort of actually<a name="line.664"></a>
+<span class="sourceLineNo">665</span>   *                                       retrieving the candidate entry IDs<a name="line.665"></a>
+<span class="sourceLineNo">666</span>   *                                       for exploded index keys in which the<a name="line.666"></a>
+<span class="sourceLineNo">667</span>   *                                       number of matching entries is known.<a name="line.667"></a>
+<span class="sourceLineNo">668</span>   * @param  fastShortCircuitThreshold     Specifies the short-circuit threshold<a name="line.668"></a>
+<span class="sourceLineNo">669</span>   *                                       that the server should use when<a name="line.669"></a>
+<span class="sourceLineNo">670</span>   *                                       determining whether to continue with<a name="line.670"></a>
+<span class="sourceLineNo">671</span>   *                                       index processing for fast index<a name="line.671"></a>
+<span class="sourceLineNo">672</span>   *                                       processing.<a name="line.672"></a>
+<span class="sourceLineNo">673</span>   * @param  slowShortCircuitThreshold     Specifies the short-circuit threshold<a name="line.673"></a>
+<span class="sourceLineNo">674</span>   *                                       that the server should use when<a name="line.674"></a>
+<span class="sourceLineNo">675</span>   *                                       determining whether to continue with<a name="line.675"></a>
+<span class="sourceLineNo">676</span>   *                                       index processing for slow index<a name="line.676"></a>
+<span class="sourceLineNo">677</span>   *                                       processing.<a name="line.677"></a>
+<span class="sourceLineNo">678</span>   * @param  includeDebugInfo              Indicates whether the server should<a name="line.678"></a>
+<span class="sourceLineNo">679</span>   *                                       include debug information in the<a name="line.679"></a>
+<span class="sourceLineNo">680</span>   *                                       response that may help better<a name="line.680"></a>
+<span class="sourceLineNo">681</span>   *                                       understand how it arrived at the<a name="line.681"></a>
+<span class="sourceLineNo">682</span>   *                                       result.<a name="line.682"></a>
+<span class="sourceLineNo">683</span>   *<a name="line.683"></a>
+<span class="sourceLineNo">684</span>   * @return  The ASN.1 octet string containing the encoded control value.<a name="line.684"></a>
+<span class="sourceLineNo">685</span>   */<a name="line.685"></a>
+<span class="sourceLineNo">686</span>  private static ASN1OctetString encodeValue(<a name="line.686"></a>
+<span class="sourceLineNo">687</span>                      final int maxCandidatesToExamine,<a name="line.687"></a>
+<span class="sourceLineNo">688</span>                      final boolean alwaysExamineCandidates,<a name="line.688"></a>
+<span class="sourceLineNo">689</span>                      final boolean processSearchIfUnindexed,<a name="line.689"></a>
+<span class="sourceLineNo">690</span>                      final boolean skipResolvingExplodedIndexes,<a name="line.690"></a>
+<span class="sourceLineNo">691</span>                      final Long fastShortCircuitThreshold,<a name="line.691"></a>
+<span class="sourceLineNo">692</span>                      final Long slowShortCircuitThreshold,<a name="line.692"></a>
+<span class="sourceLineNo">693</span>                      final boolean includeDebugInfo)<a name="line.693"></a>
+<span class="sourceLineNo">694</span>  {<a name="line.694"></a>
+<span class="sourceLineNo">695</span>    final ArrayList&lt;ASN1Element&gt; elements = new ArrayList&lt;ASN1Element&gt;(4);<a name="line.695"></a>
+<span class="sourceLineNo">696</span><a name="line.696"></a>
+<span class="sourceLineNo">697</span>    if (maxCandidatesToExamine &gt; 0)<a name="line.697"></a>
+<span class="sourceLineNo">698</span>    {<a name="line.698"></a>
+<span class="sourceLineNo">699</span>      elements.add(new ASN1Integer(TYPE_MAX_CANDIDATES_TO_EXAMINE,<a name="line.699"></a>
+<span class="sourceLineNo">700</span>           maxCandidatesToExamine));<a name="line.700"></a>
+<span class="sourceLineNo">701</span>    }<a name="line.701"></a>
+<span class="sourceLineNo">702</span><a name="line.702"></a>
+<span class="sourceLineNo">703</span>    if (alwaysExamineCandidates)<a name="line.703"></a>
+<span class="sourceLineNo">704</span>    {<a name="line.704"></a>
+<span class="sourceLineNo">705</span>      elements.add(new ASN1Boolean(TYPE_ALWAYS_EXAMINE_CANDIDATES, true));<a name="line.705"></a>
+<span class="sourceLineNo">706</span>    }<a name="line.706"></a>
+<span class="sourceLineNo">707</span><a name="line.707"></a>
+<span class="sourceLineNo">708</span>    if (processSearchIfUnindexed)<a name="line.708"></a>
+<span class="sourceLineNo">709</span>    {<a name="line.709"></a>
+<span class="sourceLineNo">710</span>      elements.add(new ASN1Boolean(TYPE_PROCESS_SEARCH_IF_UNINDEXED, true));<a name="line.710"></a>
+<span class="sourceLineNo">711</span>    }<a name="line.711"></a>
+<span class="sourceLineNo">712</span><a name="line.712"></a>
+<span class="sourceLineNo">713</span>    if (includeDebugInfo)<a name="line.713"></a>
+<span class="sourceLineNo">714</span>    {<a name="line.714"></a>
+<span class="sourceLineNo">715</span>      elements.add(new ASN1Boolean(TYPE_INCLUDE_DEBUG_INFO, true));<a name="line.715"></a>
+<span class="sourceLineNo">716</span>    }<a name="line.716"></a>
+<span class="sourceLineNo">717</span><a name="line.717"></a>
+<span class="sourceLineNo">718</span>    if (skipResolvingExplodedIndexes)<a name="line.718"></a>
+<span class="sourceLineNo">719</span>    {<a name="line.719"></a>
+<span class="sourceLineNo">720</span>      elements.add(new ASN1Boolean(TYPE_SKIP_RESOLVING_EXPLODED_INDEXES, true));<a name="line.720"></a>
+<span class="sourceLineNo">721</span>    }<a name="line.721"></a>
+<span class="sourceLineNo">722</span><a name="line.722"></a>
+<span class="sourceLineNo">723</span>    if (fastShortCircuitThreshold != null)<a name="line.723"></a>
+<span class="sourceLineNo">724</span>    {<a name="line.724"></a>
+<span class="sourceLineNo">725</span>      elements.add(new ASN1Long(TYPE_FAST_SHORT_CIRCUIT_THRESHOLD,<a name="line.725"></a>
+<span class="sourceLineNo">726</span>           Math.max(0L, fastShortCircuitThreshold)));<a name="line.726"></a>
+<span class="sourceLineNo">727</span>    }<a name="line.727"></a>
+<span class="sourceLineNo">728</span><a name="line.728"></a>
+<span class="sourceLineNo">729</span>    if (slowShortCircuitThreshold != null)<a name="line.729"></a>
+<span class="sourceLineNo">730</span>    {<a name="line.730"></a>
+<span class="sourceLineNo">731</span>      elements.add(new ASN1Long(TYPE_SLOW_SHORT_CIRCUIT_THRESHOLD,<a name="line.731"></a>
+<span class="sourceLineNo">732</span>           Math.max(0L, slowShortCircuitThreshold)));<a name="line.732"></a>
+<span class="sourceLineNo">733</span>    }<a name="line.733"></a>
+<span class="sourceLineNo">734</span><a name="line.734"></a>
+<span class="sourceLineNo">735</span>    return new ASN1OctetString(new ASN1Sequence(elements).encode());<a name="line.735"></a>
+<span class="sourceLineNo">736</span>  }<a name="line.736"></a>
+<span class="sourceLineNo">737</span><a name="line.737"></a>
+<span class="sourceLineNo">738</span><a name="line.738"></a>
+<span class="sourceLineNo">739</span><a name="line.739"></a>
+<span class="sourceLineNo">740</span>  /**<a name="line.740"></a>
+<span class="sourceLineNo">741</span>   * Retrieves the maximum number of candidate entries that should be examined<a name="line.741"></a>
+<span class="sourceLineNo">742</span>   * in order to determine accurate count of the number of matching entries.<a name="line.742"></a>
+<span class="sourceLineNo">743</span>   * &lt;BR&gt;&lt;BR&gt;<a name="line.743"></a>
+<span class="sourceLineNo">744</span>   * For a fully-indexed search, this property will only be used if<a name="line.744"></a>
+<span class="sourceLineNo">745</span>   * {@link #alwaysExamineCandidates} is true.  If the number of candidate<a name="line.745"></a>
+<span class="sourceLineNo">746</span>   * entries identified is less than the maximum number of candidates to<a name="line.746"></a>
+<span class="sourceLineNo">747</span>   * examine, then the server will return an {@code EXAMINED_COUNT} result that<a name="line.747"></a>
+<span class="sourceLineNo">748</span>   * indicates the number of entries matching the criteria that would actually<a name="line.748"></a>
+<span class="sourceLineNo">749</span>   * be returned in a normal search with the same criteria.  If the number of<a name="line.749"></a>
+<span class="sourceLineNo">750</span>   * candidate entries exceeds the maximum number of candidates to examine, then<a name="line.750"></a>
+<span class="sourceLineNo">751</span>   * the server will return an {@code UNEXAMINED_COUNT} result that indicates<a name="line.751"></a>
+<span class="sourceLineNo">752</span>   * the number of entries matching the search criteria but that may include<a name="line.752"></a>
+<span class="sourceLineNo">753</span>   * entries that would not actually be returned to the client.<a name="line.753"></a>
+<span class="sourceLineNo">754</span>   * &lt;BR&gt;&lt;BR&gt;<a name="line.754"></a>
+<span class="sourceLineNo">755</span>   * For a partially-indexed search, if the upper bound on the number of<a name="line.755"></a>
+<span class="sourceLineNo">756</span>   * candidates is less than or equal to the maximum number of candidates to<a name="line.756"></a>
+<span class="sourceLineNo">757</span>   * examine, then the server will internally retrieve and examine each of those<a name="line.757"></a>
+<span class="sourceLineNo">758</span>   * candidates to determine which of them match the search criteria and would<a name="line.758"></a>
+<span class="sourceLineNo">759</span>   * actually be returned to the client, and will then return an<a name="line.759"></a>
+<span class="sourceLineNo">760</span>   * {@code EXAMINED_COUNT} result with that count.  If the upper bound on the<a name="line.760"></a>
+<span class="sourceLineNo">761</span>   * number of candidates is greater than the maximum number of candidates to<a name="line.761"></a>
+<span class="sourceLineNo">762</span>   * examine, then the server will return an {@code UPPER_BOUND} result to<a name="line.762"></a>
+<span class="sourceLineNo">763</span>   * indicate that the exact count is not known but an upper bound is available.<a name="line.763"></a>
+<span class="sourceLineNo">764</span>   *<a name="line.764"></a>
+<span class="sourceLineNo">765</span>   * @return  The maximum number of candidate entries to examine in order to<a name="line.765"></a>
+<span class="sourceLineNo">766</span>   *          determine an accurate count of the number of matching entries.<a name="line.766"></a>
+<span class="sourceLineNo">767</span>   */<a name="line.767"></a>
+<span class="sourceLineNo">768</span>  public int getMaxCandidatesToExamine()<a name="line.768"></a>
+<span class="sourceLineNo">769</span>  {<a name="line.769"></a>
+<span class="sourceLineNo">770</span>    return maxCandidatesToExamine;<a name="line.770"></a>
+<span class="sourceLineNo">771</span>  }<a name="line.771"></a>
+<span class="sourceLineNo">772</span><a name="line.772"></a>
+<span class="sourceLineNo">773</span><a name="line.773"></a>
+<span class="sourceLineNo">774</span><a name="line.774"></a>
+<span class="sourceLineNo">775</span>  /**<a name="line.775"></a>
+<span class="sourceLineNo">776</span>   * Indicates whether the server should always examine candidate entries in<a name="line.776"></a>
+<span class="sourceLineNo">777</span>   * fully-indexed searches to determine whether they would actually be returned<a name="line.777"></a>
+<span class="sourceLineNo">778</span>   * to the client in a normal search with the same criteria.<a name="line.778"></a>
+<span class="sourceLineNo">779</span>   *<a name="line.779"></a>
+<span class="sourceLineNo">780</span>   * @return  {@code true} if the server should attempt to internally retrieve<a name="line.780"></a>
+<span class="sourceLineNo">781</span>   *          and examine matching entries to determine whether they would<a name="line.781"></a>
+<span class="sourceLineNo">782</span>   *          normally be returned to the client (i.e.., that the client has<a name="line.782"></a>
+<span class="sourceLineNo">783</span>   *          permission to access the entry and that it is not a<a name="line.783"></a>
+<span class="sourceLineNo">784</span>   *          normally-hidden entry like an LDAP subentry, a replication<a name="line.784"></a>
+<span class="sourceLineNo">785</span>   *          conflict entry, or a soft-deleted entry), or {@code false} if the<a name="line.785"></a>
+<span class="sourceLineNo">786</span>   *          server should return an unverified count.<a name="line.786"></a>
+<span class="sourceLineNo">787</span>   */<a name="line.787"></a>
+<span class="sourceLineNo">788</span>  public boolean alwaysExamineCandidates()<a name="line.788"></a>
+<span class="sourceLineNo">789</span>  {<a name="line.789"></a>
+<span class="sourceLineNo">790</span>    return alwaysExamineCandidates;<a name="line.790"></a>
+<span class="sourceLineNo">791</span>  }<a name="line.791"></a>
+<span class="sourceLineNo">792</span><a name="line.792"></a>
+<span class="sourceLineNo">793</span><a name="line.793"></a>
+<span class="sourceLineNo">794</span><a name="line.794"></a>
+<span class="sourceLineNo">795</span>  /**<a name="line.795"></a>
+<span class="sourceLineNo">796</span>   * Indicates whether the server should internally retrieve and examine all<a name="line.796"></a>
+<span class="sourceLineNo">797</span>   * entries within the search scope in order to obtain an exact matching entry<a name="line.797"></a>
+<span class="sourceLineNo">798</span>   * count for an unindexed search.  Note that this value will not be considered<a name="line.798"></a>
+<span class="sourceLineNo">799</span>   * for completely-indexed or partially-indexed searches, nor for searches in<a name="line.799"></a>
+<span class="sourceLineNo">800</span>   * which matching entries should be returned.<a name="line.800"></a>
+<span class="sourceLineNo">801</span>   *<a name="line.801"></a>
+<span class="sourceLineNo">802</span>   * @return  {@code true} if the server should internally retrieve and examine<a name="line.802"></a>
+<span class="sourceLineNo">803</span>   *          all entries within the search scope in order to obtain an exact<a name="line.803"></a>
+<span class="sourceLineNo">804</span>   *          matching entry count for an unindexed search, or {@code false} if<a name="line.804"></a>
+<span class="sourceLineNo">805</span>   *          not.<a name="line.805"></a>
+<span class="sourceLineNo">806</span>   */<a name="line.806"></a>
+<span class="sourceLineNo">807</span>  public boolean processSearchIfUnindexed()<a name="line.807"></a>
+<span class="sourceLineNo">808</span>  {<a name="line.808"></a>
+<span class="sourceLineNo">809</span>    return processSearchIfUnindexed;<a name="line.809"></a>
+<span class="sourceLineNo">810</span>  }<a name="line.810"></a>
+<span class="sourceLineNo">811</span><a name="line.811"></a>
+<span class="sourceLineNo">812</span><a name="line.812"></a>
+<span class="sourceLineNo">813</span><a name="line.813"></a>
+<span class="sourceLineNo">814</span>  /**<a name="line.814"></a>
+<span class="sourceLineNo">815</span>   * Indicates whether the server should skip the effort of actually retrieving<a name="line.815"></a>
+<span class="sourceLineNo">816</span>   * the candidate entry IDs for exploded index keys in which the number of<a name="line.816"></a>
+<span class="sourceLineNo">817</span>   * matching entries is known.  Skipping the process of accessing an exploded<a name="line.817"></a>
+<span class="sourceLineNo">818</span>   * index can allow the server to more quickly arrive at the matching entry<a name="line.818"></a>
+<span class="sourceLineNo">819</span>   * count estimate, but that estimate may be less accurate than if it had<a name="line.819"></a>
+<span class="sourceLineNo">820</span>   * actually retrieved those candidates.<a name="line.820"></a>
+<span class="sourceLineNo">821</span>   *<a name="line.821"></a>
+<span class="sourceLineNo">822</span>   * @return  {@code true} if the server should skip the effort of actually<a name="line.822"></a>
+<span class="sourceLineNo">823</span>   *          retrieving the candidate entry IDs for exploded index keys in<a name="line.823"></a>
+<span class="sourceLineNo">824</span>   *          which the number of matching entries is known, or {@code false} if<a name="line.824"></a>
+<span class="sourceLineNo">825</span>   *          it may retrieve candidates from an exploded index in the course of<a name="line.825"></a>
+<span class="sourceLineNo">826</span>   *          determining the matching entry count.<a name="line.826"></a>
+<span class="sourceLineNo">827</span>   */<a name="line.827"></a>
+<span class="sourceLineNo">828</span>  public boolean skipResolvingExplodedIndexes()<a name="line.828"></a>
+<span class="sourceLineNo">829</span>  {<a name="line.829"></a>
+<span class="sourceLineNo">830</span>    return skipResolvingExplodedIndexes;<a name="line.830"></a>
+<span class="sourceLineNo">831</span>  }<a name="line.831"></a>
+<span class="sourceLineNo">832</span><a name="line.832"></a>
+<span class="sourceLineNo">833</span><a name="line.833"></a>
+<span class="sourceLineNo">834</span><a name="line.834"></a>
+<span class="sourceLineNo">835</span>  /**<a name="line.835"></a>
+<span class="sourceLineNo">836</span>   * Retrieves the short-circuit threshold that the server should use when<a name="line.836"></a>
+<span class="sourceLineNo">837</span>   * determining whether to continue with index processing in an attempt to<a name="line.837"></a>
+<span class="sourceLineNo">838</span>   * further pare down a candidate set that already has a defined superset of<a name="line.838"></a>
+<span class="sourceLineNo">839</span>   * the entries that actually match the filter.  If the number of entries in<a name="line.839"></a>
+<span class="sourceLineNo">840</span>   * that candidate set is less than or equal to the short-circuit threshold,<a name="line.840"></a>
+<span class="sourceLineNo">841</span>   * then the server may simply use that candidate set in the course of<a name="line.841"></a>
+<span class="sourceLineNo">842</span>   * determining the matching entry count, even if there may be additional<a name="line.842"></a>
+<span class="sourceLineNo">843</span>   * processing that can be performed (e.g., further filter components to<a name="line.843"></a>
+<span class="sourceLineNo">844</span>   * evaluate) that may allow the server to pare down the results even further.<a name="line.844"></a>
+<span class="sourceLineNo">845</span>   * Short-circuiting may allow the server to obtain the matching entry count<a name="line.845"></a>
+<span class="sourceLineNo">846</span>   * estimate faster, but may also cause the resulting estimate to be less<a name="line.846"></a>
+<span class="sourceLineNo">847</span>   * accurate.<a name="line.847"></a>
+<span class="sourceLineNo">848</span>   * &lt;BR&gt;&lt;BR&gt;<a name="line.848"></a>
+<span class="sourceLineNo">849</span>   * The value returned by this method will be used for cases in which the<a name="line.849"></a>
+<span class="sourceLineNo">850</span>   * server is performing the fastest types of index processing.  For example,<a name="line.850"></a>
+<span class="sourceLineNo">851</span>   * this may include evaluating presence, equality, or approximate match<a name="line.851"></a>
+<span class="sourceLineNo">852</span>   * components, which should only require retrieving a single index key to<a name="line.852"></a>
+<span class="sourceLineNo">853</span>   * obtain the candidate set.<a name="line.853"></a>
+<span class="sourceLineNo">854</span>   *<a name="line.854"></a>
+<span class="sourceLineNo">855</span>   * @return  The short-circuit threshold that should be used for fast index<a name="line.855"></a>
+<span class="sourceLineNo">856</span>   *          processing, zero if the server should not short-circuit at all<a name="line.856"></a>
+<span class="sourceLineNo">857</span>   *          during fast index processing, or {@code null} if the server should<a name="line.857"></a>
+<span class="sourceLineNo">858</span>   *          determine the appropriate fast short-circuit threshold to use.<a name="line.858"></a>
+<span class="sourceLineNo">859</span>   */<a name="line.859"></a>
+<span class="sourceLineNo">860</span>  public Long getFastShortCircuitThreshold()<a name="line.860"></a>
+<span class="sourceLineNo">861</span>  {<a name="line.861"></a>
+<span class="sourceLineNo">862</span>    return fastShortCircuitThreshold;<a name="line.862"></a>
+<span class="sourceLineNo">863</span>  }<a name="line.863"></a>
+<span class="sourceLineNo">864</span><a name="line.864"></a>
+<span class="sourceLineNo">865</span><a name="line.865"></a>
+<span class="sourceLineNo">866</span><a name="line.866"></a>
+<span class="sourceLineNo">867</span>  /**<a name="line.867"></a>
+<span class="sourceLineNo">868</span>   * Retrieves the short-circuit threshold that the server should use when<a name="line.868"></a>
+<span class="sourceLineNo">869</span>   * determining whether to continue with index processing in an attempt to<a name="line.869"></a>
+<span class="sourceLineNo">870</span>   * further pare down a candidate set that already has a defined superset of<a name="line.870"></a>
+<span class="sourceLineNo">871</span>   * the entries that actually match the filter.  If the number of entries in<a name="line.871"></a>
+<span class="sourceLineNo">872</span>   * that candidate set is less than or equal to the short-circuit threshold,<a name="line.872"></a>
+<span class="sourceLineNo">873</span>   * then the server may simply use that candidate set in the course of<a name="line.873"></a>
+<span class="sourceLineNo">874</span>   * determining the matching entry count, even if there may be additional<a name="line.874"></a>
+<span class="sourceLineNo">875</span>   * processing that can be performed (e.g., further filter components to<a name="line.875"></a>
+<span class="sourceLineNo">876</span>   * evaluate) that may allow the server to pare down the results even further.<a name="line.876"></a>
+<span class="sourceLineNo">877</span>   * Short-circuiting may allow the server to obtain the matching entry count<a name="line.877"></a>
+<span class="sourceLineNo">878</span>   * estimate faster, but may also cause the resulting estimate to be less<a name="line.878"></a>
+<span class="sourceLineNo">879</span>   * accurate.<a name="line.879"></a>
+<span class="sourceLineNo">880</span>   * &lt;BR&gt;&lt;BR&gt;<a name="line.880"></a>
+<span class="sourceLineNo">881</span>   * The value returned by this method will be used for cases in which the<a name="line.881"></a>
+<span class="sourceLineNo">882</span>   * server is performing index processing that is not considered to be among<a name="line.882"></a>
+<span class="sourceLineNo">883</span>   * the fastest types of processing.  For example, this may include evaluating<a name="line.883"></a>
+<span class="sourceLineNo">884</span>   * substring and range components, as they may require retrieving many index<a name="line.884"></a>
+<span class="sourceLineNo">885</span>   * keys to obtain the full candidate set.<a name="line.885"></a>
+<span class="sourceLineNo">886</span>   *<a name="line.886"></a>
+<span class="sourceLineNo">887</span>   * @return  The short-circuit threshold that should be used for slow index<a name="line.887"></a>
+<span class="sourceLineNo">888</span>   *          processing, or zero if the server should not short-circuit at all<a name="line.888"></a>
+<span class="sourceLineNo">889</span>   *          during slow index processing, or {@code null} if the server should<a name="line.889"></a>
+<span class="sourceLineNo">890</span>   *          determine the appropriate slow short-circuit threshold to use.<a name="line.890"></a>
+<span class="sourceLineNo">891</span>   */<a name="line.891"></a>
+<span class="sourceLineNo">892</span>  public Long getSlowShortCircuitThreshold()<a name="line.892"></a>
+<span class="sourceLineNo">893</span>  {<a name="line.893"></a>
+<span class="sourceLineNo">894</span>    return slowShortCircuitThreshold;<a name="line.894"></a>
+<span class="sourceLineNo">895</span>  }<a name="line.895"></a>
+<span class="sourceLineNo">896</span><a name="line.896"></a>
+<span class="sourceLineNo">897</span><a name="line.897"></a>
+<span class="sourceLineNo">898</span><a name="line.898"></a>
+<span class="sourceLineNo">899</span>  /**<a name="line.899"></a>
+<span class="sourceLineNo">900</span>   * Indicates whether the server should include debug information in the<a name="line.900"></a>
+<span class="sourceLineNo">901</span>   * response control that provides additional information about how the server<a name="line.901"></a>
+<span class="sourceLineNo">902</span>   * arrived at the result.  If debug information is to be provided, it will be<a name="line.902"></a>
+<span class="sourceLineNo">903</span>   * in a human-readable rather than machine-parsable form.<a name="line.903"></a>
+<span class="sourceLineNo">904</span>   *<a name="line.904"></a>
+<span class="sourceLineNo">905</span>   * @return  {@code true} if the server should include debug information in<a name="line.905"></a>
+<span class="sourceLineNo">906</span>   *          the response control, or {@code false} if not.<a name="line.906"></a>
+<span class="sourceLineNo">907</span>   */<a name="line.907"></a>
+<span class="sourceLineNo">908</span>  public boolean includeDebugInfo()<a name="line.908"></a>
+<span class="sourceLineNo">909</span>  {<a name="line.909"></a>
+<span class="sourceLineNo">910</span>    return includeDebugInfo;<a name="line.910"></a>
+<span class="sourceLineNo">911</span>  }<a name="line.911"></a>
+<span class="sourceLineNo">912</span><a name="line.912"></a>
+<span class="sourceLineNo">913</span><a name="line.913"></a>
+<span class="sourceLineNo">914</span><a name="line.914"></a>
+<span class="sourceLineNo">915</span>  /**<a name="line.915"></a>
+<span class="sourceLineNo">916</span>   * {@inheritDoc}<a name="line.916"></a>
+<span class="sourceLineNo">917</span>   */<a name="line.917"></a>
+<span class="sourceLineNo">918</span>  @Override()<a name="line.918"></a>
+<span class="sourceLineNo">919</span>  public String getControlName()<a name="line.919"></a>
+<span class="sourceLineNo">920</span>  {<a name="line.920"></a>
+<span class="sourceLineNo">921</span>    return INFO_CONTROL_NAME_MATCHING_ENTRY_COUNT_REQUEST.get();<a name="line.921"></a>
+<span class="sourceLineNo">922</span>  }<a name="line.922"></a>
+<span class="sourceLineNo">923</span><a name="line.923"></a>
+<span class="sourceLineNo">924</span><a name="line.924"></a>
+<span class="sourceLineNo">925</span><a name="line.925"></a>
+<span class="sourceLineNo">926</span>  /**<a name="line.926"></a>
+<span class="sourceLineNo">927</span>   * {@inheritDoc}<a name="line.927"></a>
+<span class="sourceLineNo">928</span>   */<a name="line.928"></a>
+<span class="sourceLineNo">929</span>  @Override()<a name="line.929"></a>
+<span class="sourceLineNo">930</span>  public void toString(final StringBuilder buffer)<a name="line.930"></a>
+<span class="sourceLineNo">931</span>  {<a name="line.931"></a>
+<span class="sourceLineNo">932</span>    buffer.append("MatchingEntryCountRequestControl(isCritical=");<a name="line.932"></a>
+<span class="sourceLineNo">933</span>    buffer.append(isCritical());<a name="line.933"></a>
+<span class="sourceLineNo">934</span>    buffer.append(", maxCandidatesToExamine=");<a name="line.934"></a>
+<span class="sourceLineNo">935</span>    buffer.append(maxCandidatesToExamine);<a name="line.935"></a>
+<span class="sourceLineNo">936</span>    buffer.append(", alwaysExamineCandidates=");<a name="line.936"></a>
+<span class="sourceLineNo">937</span>    buffer.append(alwaysExamineCandidates);<a name="line.937"></a>
+<span class="sourceLineNo">938</span>    buffer.append(", processSearchIfUnindexed=");<a name="line.938"></a>
+<span class="sourceLineNo">939</span>    buffer.append(processSearchIfUnindexed);<a name="line.939"></a>
+<span class="sourceLineNo">940</span>    buffer.append(", skipResolvingExplodedIndexes=");<a name="line.940"></a>
+<span class="sourceLineNo">941</span>    buffer.append(skipResolvingExplodedIndexes);<a name="line.941"></a>
+<span class="sourceLineNo">942</span>    buffer.append(", fastShortCircuitThreshold=");<a name="line.942"></a>
+<span class="sourceLineNo">943</span>    buffer.append(fastShortCircuitThreshold);<a name="line.943"></a>
+<span class="sourceLineNo">944</span>    buffer.append(", slowShortCircuitThreshold=");<a name="line.944"></a>
+<span class="sourceLineNo">945</span>    buffer.append(slowShortCircuitThreshold);<a name="line.945"></a>
+<span class="sourceLineNo">946</span>    buffer.append(", includeDebugInfo=");<a name="line.946"></a>
+<span class="sourceLineNo">947</span>    buffer.append(includeDebugInfo);<a name="line.947"></a>
+<span class="sourceLineNo">948</span>    buffer.append(')');<a name="line.948"></a>
+<span class="sourceLineNo">949</span>  }<a name="line.949"></a>
+<span class="sourceLineNo">950</span>}<a name="line.950"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>
