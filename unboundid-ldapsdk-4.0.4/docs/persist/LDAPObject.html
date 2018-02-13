@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID LDAP SDK for Java</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="../unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="../images/favicon.ico">
+  </head>
+
+  <body>
+    <div class="titletable" style="overflow:hidden" border="0"width="100%">
+      <div style="float:left" width="50%">
+        <h1 class="maintop"><a href="../index.html">UnboundID LDAP SDK for Java</a></h1>
+      </div>
+      <div style="float:right" width="50%">
+        <a href="https://www.pingidentity.com/" target="_parent">
+          <img src="../images/vendor-name-on-white.png" border="0" alt="Ping Identity">
+        </a>
+      </div>
+    </div>
+              <div align="right">
+                <a href="https://www.ldap.com/unboundid-ldap-sdk-for-java" style="font-size: 85%">LDAP SDK Home Page</a>
+                <br>
+                <a href="../index.html" style="font-size: 85%">Product Information</a>
+                <br>
+                <a href="index.html" style="font-size: 85%">Using the LDAP SDK Persistence Framework</a>
+              </div>
+
+              <h2>The <tt>@LDAPObject</tt> Annotation Type</h2>
+
+              <p>
+                The classes for objects that should be used in conjunction with the UnboundID LDAP
+                SDK persistence framework should be marked with an <tt>@LDAPObject</tt> annotation
+                which provides information about how objects of that type should be stored in the
+                directory server.  Java classes marked with this annotation type must public, must
+                be non-abstract and must have a zero-argument constructor.
+              </p>
+
+              <p>
+                Elements that may be present in the <tt>@LDAPObject</tt> annotation type include:
+              </p>
+
+              <ul>
+                <li>
+                  <tt>structuralClass</tt> -- This element is used to specify the name (or OID)
+                  of the structural object class that should be used for entries created from
+                  objects that are instances of the marked Java class.  If this is not provided,
+                  then it will be assumed that the structural object class has the same name as the
+                  Java class.
+                  <br><br>
+                </li>
+
+                <li>
+                  <tt>auxiliaryClass</tt> -- This element is used to specify the names (or OIDs) of
+                  any auxiliary object classes that should be used for entries created from objects
+                  that are instances of the marked Java class.  If this is not provided, then it
+                  will be assumed that no auxiliary object classes will be used.
+                  <br><br>
+                </li>
+
+                <li>
+                  <tt>postEncodeMethod</tt> -- This element is used to specify the name of a Java
+                  method contained in the marked class which should be invoked after all other
+                  encoding (based on annotated fields and methods in the class) has been performed
+                  to construct an LDAP entry that represents the contents of the Java class.  This
+                  method must take exactly one argument of type
+                  <tt>com.unboundid.ldap.sdk.Entry</tt>.  It may alter the contents of the entry in
+                  any way, and it may throw any kind of exception to indicate that the entry is not
+                  acceptable.  If this is not provided, then no post-encode method will be invoked.
+                  <br><br>
+                </li>
+
+                <li>
+                  <tt>postDecodeMethod</tt> -- This element is used to specify the name of a Java
+                  method contained in the marked class which should be invoked after all other
+                  decoding (based on annotated fields and methods in the class) has been performed
+                  to initialize an instance of the class from an LDAP entry.  This method must not
+                  take any arguments.  It may throw any kind of exception if the decoded object is
+                  not valid.  If this is not provided, then no post-decode method will be invoked.
+                  <br><br>
+                </li>
+
+                <li>
+                  <tt>defaultParentDN</tt> -- This element is used to specify the default parent DN
+                  for entries created from objects of the associated type if no explicit parent DN
+                  is given.  If this is not provided, then there will not be a default parent DN
+                  and an explicit parent DN should always be provided when it is needed.
+                  <br><br>
+                </li>
+              </ul>
+
+    <div class="copyright-footer">Copyright &copy; 2010-2018&ndash; Ping Identity Corporation &ndash; All rights reserved.</div>
+  </body>
+</html>

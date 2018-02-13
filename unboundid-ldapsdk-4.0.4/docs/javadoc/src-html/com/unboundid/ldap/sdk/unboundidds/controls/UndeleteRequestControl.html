@@ -1,0 +1,439 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>/*<a name="line.1"></a>
+<span class="sourceLineNo">002</span> * Copyright 2012-2018 Ping Identity Corporation<a name="line.2"></a>
+<span class="sourceLineNo">003</span> * All Rights Reserved.<a name="line.3"></a>
+<span class="sourceLineNo">004</span> */<a name="line.4"></a>
+<span class="sourceLineNo">005</span>/*<a name="line.5"></a>
+<span class="sourceLineNo">006</span> * Copyright (C) 2015-2018 Ping Identity Corporation<a name="line.6"></a>
+<span class="sourceLineNo">007</span> *<a name="line.7"></a>
+<span class="sourceLineNo">008</span> * This program is free software; you can redistribute it and/or modify<a name="line.8"></a>
+<span class="sourceLineNo">009</span> * it under the terms of the GNU General Public License (GPLv2 only)<a name="line.9"></a>
+<span class="sourceLineNo">010</span> * or the terms of the GNU Lesser General Public License (LGPLv2.1 only)<a name="line.10"></a>
+<span class="sourceLineNo">011</span> * as published by the Free Software Foundation.<a name="line.11"></a>
+<span class="sourceLineNo">012</span> *<a name="line.12"></a>
+<span class="sourceLineNo">013</span> * This program is distributed in the hope that it will be useful,<a name="line.13"></a>
+<span class="sourceLineNo">014</span> * but WITHOUT ANY WARRANTY; without even the implied warranty of<a name="line.14"></a>
+<span class="sourceLineNo">015</span> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the<a name="line.15"></a>
+<span class="sourceLineNo">016</span> * GNU General Public License for more details.<a name="line.16"></a>
+<span class="sourceLineNo">017</span> *<a name="line.17"></a>
+<span class="sourceLineNo">018</span> * You should have received a copy of the GNU General Public License<a name="line.18"></a>
+<span class="sourceLineNo">019</span> * along with this program; if not, see &lt;http://www.gnu.org/licenses&gt;.<a name="line.19"></a>
+<span class="sourceLineNo">020</span> */<a name="line.20"></a>
+<span class="sourceLineNo">021</span>package com.unboundid.ldap.sdk.unboundidds.controls;<a name="line.21"></a>
+<span class="sourceLineNo">022</span><a name="line.22"></a>
+<span class="sourceLineNo">023</span><a name="line.23"></a>
+<span class="sourceLineNo">024</span><a name="line.24"></a>
+<span class="sourceLineNo">025</span>import java.util.List;<a name="line.25"></a>
+<span class="sourceLineNo">026</span>import java.util.ArrayList;<a name="line.26"></a>
+<span class="sourceLineNo">027</span><a name="line.27"></a>
+<span class="sourceLineNo">028</span>import com.unboundid.asn1.ASN1Element;<a name="line.28"></a>
+<span class="sourceLineNo">029</span>import com.unboundid.asn1.ASN1Sequence;<a name="line.29"></a>
+<span class="sourceLineNo">030</span>import com.unboundid.ldap.matchingrules.BooleanMatchingRule;<a name="line.30"></a>
+<span class="sourceLineNo">031</span>import com.unboundid.ldap.matchingrules.OctetStringMatchingRule;<a name="line.31"></a>
+<span class="sourceLineNo">032</span>import com.unboundid.ldap.sdk.Control;<a name="line.32"></a>
+<span class="sourceLineNo">033</span>import com.unboundid.ldap.sdk.AddRequest;<a name="line.33"></a>
+<span class="sourceLineNo">034</span>import com.unboundid.ldap.sdk.Attribute;<a name="line.34"></a>
+<span class="sourceLineNo">035</span>import com.unboundid.ldap.sdk.LDAPException;<a name="line.35"></a>
+<span class="sourceLineNo">036</span>import com.unboundid.ldap.sdk.Modification;<a name="line.36"></a>
+<span class="sourceLineNo">037</span>import com.unboundid.ldap.sdk.ResultCode;<a name="line.37"></a>
+<span class="sourceLineNo">038</span>import com.unboundid.ldif.LDIFModifyChangeRecord;<a name="line.38"></a>
+<span class="sourceLineNo">039</span>import com.unboundid.util.Debug;<a name="line.39"></a>
+<span class="sourceLineNo">040</span>import com.unboundid.util.NotMutable;<a name="line.40"></a>
+<span class="sourceLineNo">041</span>import com.unboundid.util.StaticUtils;<a name="line.41"></a>
+<span class="sourceLineNo">042</span>import com.unboundid.util.ThreadSafety;<a name="line.42"></a>
+<span class="sourceLineNo">043</span>import com.unboundid.util.ThreadSafetyLevel;<a name="line.43"></a>
+<span class="sourceLineNo">044</span><a name="line.44"></a>
+<span class="sourceLineNo">045</span>import static com.unboundid.ldap.sdk.unboundidds.controls.ControlMessages.*;<a name="line.45"></a>
+<span class="sourceLineNo">046</span><a name="line.46"></a>
+<span class="sourceLineNo">047</span><a name="line.47"></a>
+<span class="sourceLineNo">048</span><a name="line.48"></a>
+<span class="sourceLineNo">049</span>/**<a name="line.49"></a>
+<span class="sourceLineNo">050</span> * This class provides a request control which may be included in an add request<a name="line.50"></a>
+<span class="sourceLineNo">051</span> * to indicate that the contents of the resulting entry should come not from the<a name="line.51"></a>
+<span class="sourceLineNo">052</span> * data of the add request itself but instead from a soft-deleted entry.  This<a name="line.52"></a>
+<span class="sourceLineNo">053</span> * can be used to recover an entry that was previously removed by a delete<a name="line.53"></a>
+<span class="sourceLineNo">054</span> * request containing the {@link SoftDeleteRequestControl}.<a name="line.54"></a>
+<span class="sourceLineNo">055</span> * &lt;BR&gt;<a name="line.55"></a>
+<span class="sourceLineNo">056</span> * &lt;BLOCKQUOTE&gt;<a name="line.56"></a>
+<span class="sourceLineNo">057</span> *   &lt;B&gt;NOTE:&lt;/B&gt;  This class, and other classes within the<a name="line.57"></a>
+<span class="sourceLineNo">058</span> *   {@code com.unboundid.ldap.sdk.unboundidds} package structure, are only<a name="line.58"></a>
+<span class="sourceLineNo">059</span> *   supported for use against Ping Identity, UnboundID, and Alcatel-Lucent 8661<a name="line.59"></a>
+<span class="sourceLineNo">060</span> *   server products.  These classes provide support for proprietary<a name="line.60"></a>
+<span class="sourceLineNo">061</span> *   functionality or for external specifications that are not considered stable<a name="line.61"></a>
+<span class="sourceLineNo">062</span> *   or mature enough to be guaranteed to work in an interoperable way with<a name="line.62"></a>
+<span class="sourceLineNo">063</span> *   other types of LDAP servers.<a name="line.63"></a>
+<span class="sourceLineNo">064</span> * &lt;/BLOCKQUOTE&gt;<a name="line.64"></a>
+<span class="sourceLineNo">065</span> * &lt;BR&gt;<a name="line.65"></a>
+<span class="sourceLineNo">066</span> * The criticality for this control should always be {@code TRUE}.  The<a name="line.66"></a>
+<span class="sourceLineNo">067</span> * criticality will have no effect on servers that do support this control, but<a name="line.67"></a>
+<span class="sourceLineNo">068</span> * a criticality of {@code TRUE} will ensure that a server which does not<a name="line.68"></a>
+<span class="sourceLineNo">069</span> * support soft deletes does not attempt to process the add request.  If the<a name="line.69"></a>
+<span class="sourceLineNo">070</span> * criticality were {@code FALSE}, then any server that does not support the<a name="line.70"></a>
+<span class="sourceLineNo">071</span> * control would simply ignore it and attempt to add the entry specified in the<a name="line.71"></a>
+<span class="sourceLineNo">072</span> * add request (which will have details about the undelete to be processed).<a name="line.72"></a>
+<span class="sourceLineNo">073</span> * &lt;BR&gt;&lt;BR&gt;<a name="line.73"></a>
+<span class="sourceLineNo">074</span> * The control may optionally have a value.  If a value is provided, then it<a name="line.74"></a>
+<span class="sourceLineNo">075</span> * must be the encoded representation of an empty ASN.1 sequence, like:<a name="line.75"></a>
+<span class="sourceLineNo">076</span> * &lt;PRE&gt;<a name="line.76"></a>
+<span class="sourceLineNo">077</span> *   UndeleteRequestValue ::= SEQUENCE {<a name="line.77"></a>
+<span class="sourceLineNo">078</span> *     ... }<a name="line.78"></a>
+<span class="sourceLineNo">079</span> * &lt;/PRE&gt;<a name="line.79"></a>
+<span class="sourceLineNo">080</span> * In the future, the value sequence may allow one or more elements to customize<a name="line.80"></a>
+<span class="sourceLineNo">081</span> * the behavior of the undelete operation, but at present no such elements are<a name="line.81"></a>
+<span class="sourceLineNo">082</span> * defined.<a name="line.82"></a>
+<span class="sourceLineNo">083</span> * See the documentation for the {@link SoftDeleteRequestControl} class for an<a name="line.83"></a>
+<span class="sourceLineNo">084</span> * example demonstrating the use of this control.<a name="line.84"></a>
+<span class="sourceLineNo">085</span> *<a name="line.85"></a>
+<span class="sourceLineNo">086</span> * @see  HardDeleteRequestControl<a name="line.86"></a>
+<span class="sourceLineNo">087</span> * @see  SoftDeleteRequestControl<a name="line.87"></a>
+<span class="sourceLineNo">088</span> */<a name="line.88"></a>
+<span class="sourceLineNo">089</span>@NotMutable()<a name="line.89"></a>
+<span class="sourceLineNo">090</span>@ThreadSafety(level=ThreadSafetyLevel.COMPLETELY_THREADSAFE)<a name="line.90"></a>
+<span class="sourceLineNo">091</span>public final class UndeleteRequestControl<a name="line.91"></a>
+<span class="sourceLineNo">092</span>       extends Control<a name="line.92"></a>
+<span class="sourceLineNo">093</span>{<a name="line.93"></a>
+<span class="sourceLineNo">094</span>  /**<a name="line.94"></a>
+<span class="sourceLineNo">095</span>   * The OID (1.3.6.1.4.1.30221.2.5.23) for the undelete request control.<a name="line.95"></a>
+<span class="sourceLineNo">096</span>   */<a name="line.96"></a>
+<span class="sourceLineNo">097</span>  public static final String UNDELETE_REQUEST_OID =<a name="line.97"></a>
+<span class="sourceLineNo">098</span>       "1.3.6.1.4.1.30221.2.5.23";<a name="line.98"></a>
+<span class="sourceLineNo">099</span><a name="line.99"></a>
+<span class="sourceLineNo">100</span><a name="line.100"></a>
+<span class="sourceLineNo">101</span><a name="line.101"></a>
+<span class="sourceLineNo">102</span>  /**<a name="line.102"></a>
+<span class="sourceLineNo">103</span>   * The name of the optional attribute used to specify a set of changes to<a name="line.103"></a>
+<span class="sourceLineNo">104</span>   * apply to the soft-deleted entry during the course of the undelete.<a name="line.104"></a>
+<span class="sourceLineNo">105</span>   */<a name="line.105"></a>
+<span class="sourceLineNo">106</span>  public static final String ATTR_CHANGES = "ds-undelete-changes";<a name="line.106"></a>
+<span class="sourceLineNo">107</span><a name="line.107"></a>
+<span class="sourceLineNo">108</span><a name="line.108"></a>
+<span class="sourceLineNo">109</span><a name="line.109"></a>
+<span class="sourceLineNo">110</span>  /**<a name="line.110"></a>
+<span class="sourceLineNo">111</span>   * The name of the optional attribute used to indicate whether the<a name="line.111"></a>
+<span class="sourceLineNo">112</span>   * newly-undeleted user account should be disabled and prevented from<a name="line.112"></a>
+<span class="sourceLineNo">113</span>   * authenticating.<a name="line.113"></a>
+<span class="sourceLineNo">114</span>   */<a name="line.114"></a>
+<span class="sourceLineNo">115</span>  public static final String ATTR_DISABLE_ACCOUNT =<a name="line.115"></a>
+<span class="sourceLineNo">116</span>       "ds-undelete-disable-account";<a name="line.116"></a>
+<span class="sourceLineNo">117</span><a name="line.117"></a>
+<span class="sourceLineNo">118</span><a name="line.118"></a>
+<span class="sourceLineNo">119</span><a name="line.119"></a>
+<span class="sourceLineNo">120</span>  /**<a name="line.120"></a>
+<span class="sourceLineNo">121</span>   * The name of the optional attribute used to indicate whether the<a name="line.121"></a>
+<span class="sourceLineNo">122</span>   * newly-undeleted user will be required to change his/her password<a name="line.122"></a>
+<span class="sourceLineNo">123</span>   * immediately after authenticating and before being required to request any<a name="line.123"></a>
+<span class="sourceLineNo">124</span>   * other operations.<a name="line.124"></a>
+<span class="sourceLineNo">125</span>   */<a name="line.125"></a>
+<span class="sourceLineNo">126</span>  public static final String ATTR_MUST_CHANGE_PASSWORD =<a name="line.126"></a>
+<span class="sourceLineNo">127</span>       "ds-undelete-must-change-password";<a name="line.127"></a>
+<span class="sourceLineNo">128</span><a name="line.128"></a>
+<span class="sourceLineNo">129</span><a name="line.129"></a>
+<span class="sourceLineNo">130</span><a name="line.130"></a>
+<span class="sourceLineNo">131</span>  /**<a name="line.131"></a>
+<span class="sourceLineNo">132</span>   * The name of the optional attribute used to specify the new password for use<a name="line.132"></a>
+<span class="sourceLineNo">133</span>   * in the newly-undeleted entry.<a name="line.133"></a>
+<span class="sourceLineNo">134</span>   */<a name="line.134"></a>
+<span class="sourceLineNo">135</span>  public static final String ATTR_NEW_PASSWORD = "ds-undelete-new-password";<a name="line.135"></a>
+<span class="sourceLineNo">136</span><a name="line.136"></a>
+<span class="sourceLineNo">137</span><a name="line.137"></a>
+<span class="sourceLineNo">138</span><a name="line.138"></a>
+<span class="sourceLineNo">139</span>  /**<a name="line.139"></a>
+<span class="sourceLineNo">140</span>   * The name of the optional attribute used to specify the password currently<a name="line.140"></a>
+<span class="sourceLineNo">141</span>   * contained in the soft-deleted entry, to be validated as part of the<a name="line.141"></a>
+<span class="sourceLineNo">142</span>   * undelete process.<a name="line.142"></a>
+<span class="sourceLineNo">143</span>   */<a name="line.143"></a>
+<span class="sourceLineNo">144</span>  public static final String ATTR_OLD_PASSWORD = "ds-undelete-old-password";<a name="line.144"></a>
+<span class="sourceLineNo">145</span><a name="line.145"></a>
+<span class="sourceLineNo">146</span><a name="line.146"></a>
+<span class="sourceLineNo">147</span><a name="line.147"></a>
+<span class="sourceLineNo">148</span>  /**<a name="line.148"></a>
+<span class="sourceLineNo">149</span>   * The name of the required attribute used to specify the DN of the<a name="line.149"></a>
+<span class="sourceLineNo">150</span>   * soft-deleted entry to be undeleted.<a name="line.150"></a>
+<span class="sourceLineNo">151</span>   */<a name="line.151"></a>
+<span class="sourceLineNo">152</span>  public static final String ATTR_SOFT_DELETED_ENTRY_DN = "ds-undelete-from-dn";<a name="line.152"></a>
+<span class="sourceLineNo">153</span><a name="line.153"></a>
+<span class="sourceLineNo">154</span><a name="line.154"></a>
+<span class="sourceLineNo">155</span><a name="line.155"></a>
+<span class="sourceLineNo">156</span>  /**<a name="line.156"></a>
+<span class="sourceLineNo">157</span>   * The serial version UID for this serializable class.<a name="line.157"></a>
+<span class="sourceLineNo">158</span>   */<a name="line.158"></a>
+<span class="sourceLineNo">159</span>  private static final long serialVersionUID = 5338045977962112876L;<a name="line.159"></a>
+<span class="sourceLineNo">160</span><a name="line.160"></a>
+<span class="sourceLineNo">161</span><a name="line.161"></a>
+<span class="sourceLineNo">162</span><a name="line.162"></a>
+<span class="sourceLineNo">163</span>  /**<a name="line.163"></a>
+<span class="sourceLineNo">164</span>   * Creates a undelete request control with a criticality of TRUE and no value.<a name="line.164"></a>
+<span class="sourceLineNo">165</span>   */<a name="line.165"></a>
+<span class="sourceLineNo">166</span>  public UndeleteRequestControl()<a name="line.166"></a>
+<span class="sourceLineNo">167</span>  {<a name="line.167"></a>
+<span class="sourceLineNo">168</span>    super(UNDELETE_REQUEST_OID, true, null);<a name="line.168"></a>
+<span class="sourceLineNo">169</span>  }<a name="line.169"></a>
+<span class="sourceLineNo">170</span><a name="line.170"></a>
+<span class="sourceLineNo">171</span><a name="line.171"></a>
+<span class="sourceLineNo">172</span><a name="line.172"></a>
+<span class="sourceLineNo">173</span>  /**<a name="line.173"></a>
+<span class="sourceLineNo">174</span>   * Creates a new undelete request control which is decoded from the<a name="line.174"></a>
+<span class="sourceLineNo">175</span>   * provided generic control.<a name="line.175"></a>
+<span class="sourceLineNo">176</span>   *<a name="line.176"></a>
+<span class="sourceLineNo">177</span>   * @param  control  The generic control to be decoded as an undelete request<a name="line.177"></a>
+<span class="sourceLineNo">178</span>   *                  control.<a name="line.178"></a>
+<span class="sourceLineNo">179</span>   *<a name="line.179"></a>
+<span class="sourceLineNo">180</span>   * @throws  LDAPException  If the provided control cannot be decoded as an<a name="line.180"></a>
+<span class="sourceLineNo">181</span>   *                         undelete request control.<a name="line.181"></a>
+<span class="sourceLineNo">182</span>   */<a name="line.182"></a>
+<span class="sourceLineNo">183</span>  public UndeleteRequestControl(final Control control)<a name="line.183"></a>
+<span class="sourceLineNo">184</span>         throws LDAPException<a name="line.184"></a>
+<span class="sourceLineNo">185</span>  {<a name="line.185"></a>
+<span class="sourceLineNo">186</span>    super(control);<a name="line.186"></a>
+<span class="sourceLineNo">187</span><a name="line.187"></a>
+<span class="sourceLineNo">188</span>    if (control.hasValue())<a name="line.188"></a>
+<span class="sourceLineNo">189</span>    {<a name="line.189"></a>
+<span class="sourceLineNo">190</span>      try<a name="line.190"></a>
+<span class="sourceLineNo">191</span>      {<a name="line.191"></a>
+<span class="sourceLineNo">192</span>        final ASN1Sequence valueSequence =<a name="line.192"></a>
+<span class="sourceLineNo">193</span>             ASN1Sequence.decodeAsSequence(control.getValue().getValue());<a name="line.193"></a>
+<span class="sourceLineNo">194</span>        final ASN1Element[] elements = valueSequence.elements();<a name="line.194"></a>
+<span class="sourceLineNo">195</span>        if (elements.length &gt; 0)<a name="line.195"></a>
+<span class="sourceLineNo">196</span>        {<a name="line.196"></a>
+<span class="sourceLineNo">197</span>          throw new LDAPException(ResultCode.DECODING_ERROR,<a name="line.197"></a>
+<span class="sourceLineNo">198</span>               ERR_UNDELETE_REQUEST_UNSUPPORTED_VALUE_ELEMENT_TYPE.get(<a name="line.198"></a>
+<span class="sourceLineNo">199</span>                    StaticUtils.toHex(elements[0].getType())));<a name="line.199"></a>
+<span class="sourceLineNo">200</span>        }<a name="line.200"></a>
+<span class="sourceLineNo">201</span>      }<a name="line.201"></a>
+<span class="sourceLineNo">202</span>      catch (final LDAPException le)<a name="line.202"></a>
+<span class="sourceLineNo">203</span>      {<a name="line.203"></a>
+<span class="sourceLineNo">204</span>        Debug.debugException(le);<a name="line.204"></a>
+<span class="sourceLineNo">205</span>        throw le;<a name="line.205"></a>
+<span class="sourceLineNo">206</span>      }<a name="line.206"></a>
+<span class="sourceLineNo">207</span>      catch (final Exception e)<a name="line.207"></a>
+<span class="sourceLineNo">208</span>      {<a name="line.208"></a>
+<span class="sourceLineNo">209</span>        Debug.debugException(e);<a name="line.209"></a>
+<span class="sourceLineNo">210</span>        throw new LDAPException(ResultCode.DECODING_ERROR,<a name="line.210"></a>
+<span class="sourceLineNo">211</span>             ERR_UNDELETE_REQUEST_CANNOT_DECODE_VALUE.get(<a name="line.211"></a>
+<span class="sourceLineNo">212</span>                  StaticUtils.getExceptionMessage(e)),<a name="line.212"></a>
+<span class="sourceLineNo">213</span>             e);<a name="line.213"></a>
+<span class="sourceLineNo">214</span>      }<a name="line.214"></a>
+<span class="sourceLineNo">215</span>    }<a name="line.215"></a>
+<span class="sourceLineNo">216</span>  }<a name="line.216"></a>
+<span class="sourceLineNo">217</span><a name="line.217"></a>
+<span class="sourceLineNo">218</span><a name="line.218"></a>
+<span class="sourceLineNo">219</span><a name="line.219"></a>
+<span class="sourceLineNo">220</span>  /**<a name="line.220"></a>
+<span class="sourceLineNo">221</span>   * Creates a new undelete request that may be used to recover the specified<a name="line.221"></a>
+<span class="sourceLineNo">222</span>   * soft-deleted entry.<a name="line.222"></a>
+<span class="sourceLineNo">223</span>   *<a name="line.223"></a>
+<span class="sourceLineNo">224</span>   * @param  targetDN            The DN to use for the entry recovered<a name="line.224"></a>
+<span class="sourceLineNo">225</span>   *                             from the soft-deleted entry contents.  It must<a name="line.225"></a>
+<span class="sourceLineNo">226</span>   *                             not be {@code null}.<a name="line.226"></a>
+<span class="sourceLineNo">227</span>   * @param  softDeletedEntryDN  The DN of the soft-deleted entry to be used in<a name="line.227"></a>
+<span class="sourceLineNo">228</span>   *                             the restore process.  It must not be<a name="line.228"></a>
+<span class="sourceLineNo">229</span>   *                             {@code null}.<a name="line.229"></a>
+<span class="sourceLineNo">230</span>   *<a name="line.230"></a>
+<span class="sourceLineNo">231</span>   * @return  An add request with an appropriate set of content<a name="line.231"></a>
+<span class="sourceLineNo">232</span>   */<a name="line.232"></a>
+<span class="sourceLineNo">233</span>  public static AddRequest createUndeleteRequest(final String targetDN,<a name="line.233"></a>
+<span class="sourceLineNo">234</span>                                final String softDeletedEntryDN)<a name="line.234"></a>
+<span class="sourceLineNo">235</span>  {<a name="line.235"></a>
+<span class="sourceLineNo">236</span>    return createUndeleteRequest(targetDN, softDeletedEntryDN, null, null, null,<a name="line.236"></a>
+<span class="sourceLineNo">237</span>         null, null);<a name="line.237"></a>
+<span class="sourceLineNo">238</span>  }<a name="line.238"></a>
+<span class="sourceLineNo">239</span><a name="line.239"></a>
+<span class="sourceLineNo">240</span><a name="line.240"></a>
+<span class="sourceLineNo">241</span><a name="line.241"></a>
+<span class="sourceLineNo">242</span>  /**<a name="line.242"></a>
+<span class="sourceLineNo">243</span>   * Creates a new undelete request that may be used to recover the specified<a name="line.243"></a>
+<span class="sourceLineNo">244</span>   * soft-deleted entry.<a name="line.244"></a>
+<span class="sourceLineNo">245</span>   *<a name="line.245"></a>
+<span class="sourceLineNo">246</span>   * @param  targetDN            The DN to use for the entry recovered<a name="line.246"></a>
+<span class="sourceLineNo">247</span>   *                             from the soft-deleted entry contents.  It must<a name="line.247"></a>
+<span class="sourceLineNo">248</span>   *                             not be {@code null}.<a name="line.248"></a>
+<span class="sourceLineNo">249</span>   * @param  softDeletedEntryDN  The DN of the soft-deleted entry to be used in<a name="line.249"></a>
+<span class="sourceLineNo">250</span>   *                             the restore process.  It must not be<a name="line.250"></a>
+<span class="sourceLineNo">251</span>   *                             {@code null}.<a name="line.251"></a>
+<span class="sourceLineNo">252</span>   * @param  changes             An optional set of changes that should be<a name="line.252"></a>
+<span class="sourceLineNo">253</span>   *                             applied to the entry during the course of<a name="line.253"></a>
+<span class="sourceLineNo">254</span>   *                             undelete processing.  It may be {@code null} or<a name="line.254"></a>
+<span class="sourceLineNo">255</span>   *                             empty if this element should be omitted from<a name="line.255"></a>
+<span class="sourceLineNo">256</span>   *                             the resulting add request.<a name="line.256"></a>
+<span class="sourceLineNo">257</span>   * @param  oldPassword         An optional copy of the password currently<a name="line.257"></a>
+<span class="sourceLineNo">258</span>   *                             contained in the soft-deleted entry to be<a name="line.258"></a>
+<span class="sourceLineNo">259</span>   *                             recovered.  If this is non-{@code null}, then<a name="line.259"></a>
+<span class="sourceLineNo">260</span>   *                             this password will be required to match that<a name="line.260"></a>
+<span class="sourceLineNo">261</span>   *                             contained in the target entry for the undelete<a name="line.261"></a>
+<span class="sourceLineNo">262</span>   *                             to succeed.<a name="line.262"></a>
+<span class="sourceLineNo">263</span>   * @param  newPassword         An optional new password to set for the user<a name="line.263"></a>
+<span class="sourceLineNo">264</span>   *                             as part of the undelete processing.  It may be<a name="line.264"></a>
+<span class="sourceLineNo">265</span>   *                             {@code null} if no new password should be<a name="line.265"></a>
+<span class="sourceLineNo">266</span>   *                             provided.<a name="line.266"></a>
+<span class="sourceLineNo">267</span>   * @param  mustChangePassword  Indicates whether the recovered user will be<a name="line.267"></a>
+<span class="sourceLineNo">268</span>   *                             required to change his/her password before<a name="line.268"></a>
+<span class="sourceLineNo">269</span>   *                             being allowed to request any other operations.<a name="line.269"></a>
+<span class="sourceLineNo">270</span>   *                             It may be {@code null} if this should be<a name="line.270"></a>
+<span class="sourceLineNo">271</span>   *                             omitted from the resulting add request.<a name="line.271"></a>
+<span class="sourceLineNo">272</span>   * @param  disableAccount      Indicates whether the undeleted entry should be<a name="line.272"></a>
+<span class="sourceLineNo">273</span>   *                             made disabled so that it cannot be used to<a name="line.273"></a>
+<span class="sourceLineNo">274</span>   *                             authenticate.  It may be {@code null} if this<a name="line.274"></a>
+<span class="sourceLineNo">275</span>   *                             should be omitted from the resulting add<a name="line.275"></a>
+<span class="sourceLineNo">276</span>   *                             request.<a name="line.276"></a>
+<span class="sourceLineNo">277</span>   *<a name="line.277"></a>
+<span class="sourceLineNo">278</span>   * @return  An add request with an appropriate set of content<a name="line.278"></a>
+<span class="sourceLineNo">279</span>   */<a name="line.279"></a>
+<span class="sourceLineNo">280</span>  public static AddRequest createUndeleteRequest(final String targetDN,<a name="line.280"></a>
+<span class="sourceLineNo">281</span>                                final String softDeletedEntryDN,<a name="line.281"></a>
+<span class="sourceLineNo">282</span>                                final List&lt;Modification&gt; changes,<a name="line.282"></a>
+<span class="sourceLineNo">283</span>                                final String oldPassword,<a name="line.283"></a>
+<span class="sourceLineNo">284</span>                                final String newPassword,<a name="line.284"></a>
+<span class="sourceLineNo">285</span>                                final Boolean mustChangePassword,<a name="line.285"></a>
+<span class="sourceLineNo">286</span>                                final Boolean disableAccount)<a name="line.286"></a>
+<span class="sourceLineNo">287</span>  {<a name="line.287"></a>
+<span class="sourceLineNo">288</span>    final ArrayList&lt;Attribute&gt; attributes = new ArrayList&lt;Attribute&gt;(6);<a name="line.288"></a>
+<span class="sourceLineNo">289</span>    attributes.add(new Attribute(ATTR_SOFT_DELETED_ENTRY_DN,<a name="line.289"></a>
+<span class="sourceLineNo">290</span>         softDeletedEntryDN));<a name="line.290"></a>
+<span class="sourceLineNo">291</span><a name="line.291"></a>
+<span class="sourceLineNo">292</span>    if ((changes != null) &amp;&amp; (! changes.isEmpty()))<a name="line.292"></a>
+<span class="sourceLineNo">293</span>    {<a name="line.293"></a>
+<span class="sourceLineNo">294</span>      // The changes attribute should be an LDIF-encoded representation of the<a name="line.294"></a>
+<span class="sourceLineNo">295</span>      // modification, with the first two lines (the DN and changetype)<a name="line.295"></a>
+<span class="sourceLineNo">296</span>      // removed.<a name="line.296"></a>
+<span class="sourceLineNo">297</span>      final LDIFModifyChangeRecord changeRecord =<a name="line.297"></a>
+<span class="sourceLineNo">298</span>           new LDIFModifyChangeRecord(targetDN, changes);<a name="line.298"></a>
+<span class="sourceLineNo">299</span>      final String[] modLdifLines = changeRecord.toLDIF(0);<a name="line.299"></a>
+<span class="sourceLineNo">300</span>      final StringBuilder modLDIFBuffer = new StringBuilder();<a name="line.300"></a>
+<span class="sourceLineNo">301</span>      for (int i=2; i &lt; modLdifLines.length; i++)<a name="line.301"></a>
+<span class="sourceLineNo">302</span>      {<a name="line.302"></a>
+<span class="sourceLineNo">303</span>        modLDIFBuffer.append(modLdifLines[i]);<a name="line.303"></a>
+<span class="sourceLineNo">304</span>        modLDIFBuffer.append(StaticUtils.EOL);<a name="line.304"></a>
+<span class="sourceLineNo">305</span>      }<a name="line.305"></a>
+<span class="sourceLineNo">306</span>      attributes.add(new Attribute(ATTR_CHANGES,<a name="line.306"></a>
+<span class="sourceLineNo">307</span>           OctetStringMatchingRule.getInstance(), modLDIFBuffer.toString()));<a name="line.307"></a>
+<span class="sourceLineNo">308</span>    }<a name="line.308"></a>
+<span class="sourceLineNo">309</span><a name="line.309"></a>
+<span class="sourceLineNo">310</span>    if (oldPassword != null)<a name="line.310"></a>
+<span class="sourceLineNo">311</span>    {<a name="line.311"></a>
+<span class="sourceLineNo">312</span>      attributes.add(new Attribute(ATTR_OLD_PASSWORD,<a name="line.312"></a>
+<span class="sourceLineNo">313</span>           OctetStringMatchingRule.getInstance(), oldPassword));<a name="line.313"></a>
+<span class="sourceLineNo">314</span>    }<a name="line.314"></a>
+<span class="sourceLineNo">315</span><a name="line.315"></a>
+<span class="sourceLineNo">316</span>    if (newPassword != null)<a name="line.316"></a>
+<span class="sourceLineNo">317</span>    {<a name="line.317"></a>
+<span class="sourceLineNo">318</span>      attributes.add(new Attribute(ATTR_NEW_PASSWORD,<a name="line.318"></a>
+<span class="sourceLineNo">319</span>           OctetStringMatchingRule.getInstance(), newPassword));<a name="line.319"></a>
+<span class="sourceLineNo">320</span>    }<a name="line.320"></a>
+<span class="sourceLineNo">321</span><a name="line.321"></a>
+<span class="sourceLineNo">322</span>    if (mustChangePassword != null)<a name="line.322"></a>
+<span class="sourceLineNo">323</span>    {<a name="line.323"></a>
+<span class="sourceLineNo">324</span>      attributes.add(new Attribute(ATTR_MUST_CHANGE_PASSWORD,<a name="line.324"></a>
+<span class="sourceLineNo">325</span>           BooleanMatchingRule.getInstance(),<a name="line.325"></a>
+<span class="sourceLineNo">326</span>           (mustChangePassword ? "true" : "false")));<a name="line.326"></a>
+<span class="sourceLineNo">327</span>    }<a name="line.327"></a>
+<span class="sourceLineNo">328</span><a name="line.328"></a>
+<span class="sourceLineNo">329</span>    if (disableAccount != null)<a name="line.329"></a>
+<span class="sourceLineNo">330</span>    {<a name="line.330"></a>
+<span class="sourceLineNo">331</span>      attributes.add(new Attribute(ATTR_DISABLE_ACCOUNT,<a name="line.331"></a>
+<span class="sourceLineNo">332</span>           BooleanMatchingRule.getInstance(),<a name="line.332"></a>
+<span class="sourceLineNo">333</span>           (disableAccount ? "true" : "false")));<a name="line.333"></a>
+<span class="sourceLineNo">334</span>    }<a name="line.334"></a>
+<span class="sourceLineNo">335</span><a name="line.335"></a>
+<span class="sourceLineNo">336</span>    final Control[] controls =<a name="line.336"></a>
+<span class="sourceLineNo">337</span>    {<a name="line.337"></a>
+<span class="sourceLineNo">338</span>      new UndeleteRequestControl()<a name="line.338"></a>
+<span class="sourceLineNo">339</span>    };<a name="line.339"></a>
+<span class="sourceLineNo">340</span><a name="line.340"></a>
+<span class="sourceLineNo">341</span>    return new AddRequest(targetDN, attributes, controls);<a name="line.341"></a>
+<span class="sourceLineNo">342</span>  }<a name="line.342"></a>
+<span class="sourceLineNo">343</span><a name="line.343"></a>
+<span class="sourceLineNo">344</span><a name="line.344"></a>
+<span class="sourceLineNo">345</span><a name="line.345"></a>
+<span class="sourceLineNo">346</span>  /**<a name="line.346"></a>
+<span class="sourceLineNo">347</span>   * {@inheritDoc}<a name="line.347"></a>
+<span class="sourceLineNo">348</span>   */<a name="line.348"></a>
+<span class="sourceLineNo">349</span>  @Override()<a name="line.349"></a>
+<span class="sourceLineNo">350</span>  public String getControlName()<a name="line.350"></a>
+<span class="sourceLineNo">351</span>  {<a name="line.351"></a>
+<span class="sourceLineNo">352</span>    return INFO_CONTROL_NAME_UNDELETE_REQUEST.get();<a name="line.352"></a>
+<span class="sourceLineNo">353</span>  }<a name="line.353"></a>
+<span class="sourceLineNo">354</span><a name="line.354"></a>
+<span class="sourceLineNo">355</span><a name="line.355"></a>
+<span class="sourceLineNo">356</span><a name="line.356"></a>
+<span class="sourceLineNo">357</span>  /**<a name="line.357"></a>
+<span class="sourceLineNo">358</span>   * {@inheritDoc}<a name="line.358"></a>
+<span class="sourceLineNo">359</span>   */<a name="line.359"></a>
+<span class="sourceLineNo">360</span>  @Override()<a name="line.360"></a>
+<span class="sourceLineNo">361</span>  public void toString(final StringBuilder buffer)<a name="line.361"></a>
+<span class="sourceLineNo">362</span>  {<a name="line.362"></a>
+<span class="sourceLineNo">363</span>    buffer.append("UndeleteRequestControl(isCritical=");<a name="line.363"></a>
+<span class="sourceLineNo">364</span>    buffer.append(isCritical());<a name="line.364"></a>
+<span class="sourceLineNo">365</span>    buffer.append(')');<a name="line.365"></a>
+<span class="sourceLineNo">366</span>  }<a name="line.366"></a>
+<span class="sourceLineNo">367</span>}<a name="line.367"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>

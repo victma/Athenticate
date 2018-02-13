@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID LDAP SDK for Java</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="../unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="../images/favicon.ico">
+  </head>
+
+  <body>
+    <div class="titletable" style="overflow:hidden" border="0"width="100%">
+      <div style="float:left" width="50%">
+        <h1 class="maintop"><a href="../index.html">UnboundID LDAP SDK for Java</a></h1>
+      </div>
+      <div style="float:right" width="50%">
+        <a href="https://www.pingidentity.com/" target="_parent">
+          <img src="../images/vendor-name-on-white.png" border="0" alt="Ping Identity">
+        </a>
+      </div>
+    </div>
+              <div align="right">
+                <a href="https://www.ldap.com/unboundid-ldap-sdk-for-java" style="font-size: 85%">LDAP SDK Home Page</a>
+                <br>
+                <a href="../index.html" style="font-size: 85%">Product Information</a>
+                <br>
+                <a href="index.html" style="font-size: 85%">Using the LDAP SDK Persistence Framework</a>
+              </div>
+
+              <h2>The <tt>generate-schema-from-source</tt> Tool</h2>
+
+              <p>
+                The <tt>generate-schema-from-source</tt> tool may be used to generate a file
+                containing LDAP schema definitions from a properly-annotated Java source file.  The
+                schema definitions will be represented in LDIF form as they would appear in an LDAP
+                subschema subentry.
+              </p>
+
+              <p>
+                It is a command-line tool that may be invoked using the corresponding shell script
+                or batch file located in the <tt>tools</tt> directory of the UnboundID LDAP SDK for
+                Java distribution.  Alternately, it may be run programmatically by invoking the
+                <tt>main</tt> method of class
+                <tt>com.unboundid.ldap.sdk.persist.GenerateSchemaFromSource</tt>.  In either case,
+                some of the arguments which may be used with this tool are provided below.  Use the
+                <tt>--help</tt> argument for a complete listing of all supported options.
+              </p>
+
+              <ul>
+                <li>
+                  <tt>--javaClass </tt><i>{name}</i> -- This specifies the fully-qualified name of
+                  the Java class for which to generate the LDAP schema definitions.  The specified
+                  class must be in the current classpath, and it must be marked with the
+                  <tt>@LDAPObject</tt> annotation type and meet all constraints of the LDAP SDK
+                  persistence framework.  This argument must be provided.
+                  <br><br>
+                </li>
+
+                <li>
+                  <tt>--outputFile </tt><i>{path}</i> -- This specifies the path to the LDIF file
+                  to generate with the schema definitions.  This argument must be provided, and it
+                  must specify a path for which at least the parent directory exists.
+                  <br><br>
+                </li>
+              </ul>
+
+              <p>
+                Note that the generated schema definitions will not contain valid object
+                identifiers, but instead will have placeholders consisting of the name of the
+                associated attribute type or object class in all lowercase characters followed by
+                the string "-oid" (e.g., for an attribute of "myAttr", the generated attribute
+                type definition would have "myattr-oid" where the numeric OID would normally go).
+                Although some directory servers allow this form instead of actual numeric OIDs, it
+                is strongly recommended that you edit the resulting schema definitions to give them
+                valid, unique numeric OIDs.  Most of the processing performed by this tool is
+                handled by invoking the <tt>constructAttributeTypes</tt> and
+                <tt>constructObjectClasses</tt> methods on an <tt>LDAPPersister</tt> object, and
+                there are variants of these methods which take an <tt>OIDAllocator</tt> instance
+                that can be used to generate the OIDs using whatever logic you wish.
+              </p>
+
+    <div class="copyright-footer">Copyright &copy; 2010-2018&ndash; Ping Identity Corporation &ndash; All rights reserved.</div>
+  </body>
+</html>

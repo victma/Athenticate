@@ -1,0 +1,894 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>/*<a name="line.1"></a>
+<span class="sourceLineNo">002</span> * Copyright 2017-2018 Ping Identity Corporation<a name="line.2"></a>
+<span class="sourceLineNo">003</span> * All Rights Reserved.<a name="line.3"></a>
+<span class="sourceLineNo">004</span> */<a name="line.4"></a>
+<span class="sourceLineNo">005</span>/*<a name="line.5"></a>
+<span class="sourceLineNo">006</span> * Copyright (C) 2017-2018 Ping Identity Corporation<a name="line.6"></a>
+<span class="sourceLineNo">007</span> *<a name="line.7"></a>
+<span class="sourceLineNo">008</span> * This program is free software; you can redistribute it and/or modify<a name="line.8"></a>
+<span class="sourceLineNo">009</span> * it under the terms of the GNU General Public License (GPLv2 only)<a name="line.9"></a>
+<span class="sourceLineNo">010</span> * or the terms of the GNU Lesser General Public License (LGPLv2.1 only)<a name="line.10"></a>
+<span class="sourceLineNo">011</span> * as published by the Free Software Foundation.<a name="line.11"></a>
+<span class="sourceLineNo">012</span> *<a name="line.12"></a>
+<span class="sourceLineNo">013</span> * This program is distributed in the hope that it will be useful,<a name="line.13"></a>
+<span class="sourceLineNo">014</span> * but WITHOUT ANY WARRANTY; without even the implied warranty of<a name="line.14"></a>
+<span class="sourceLineNo">015</span> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the<a name="line.15"></a>
+<span class="sourceLineNo">016</span> * GNU General Public License for more details.<a name="line.16"></a>
+<span class="sourceLineNo">017</span> *<a name="line.17"></a>
+<span class="sourceLineNo">018</span> * You should have received a copy of the GNU General Public License<a name="line.18"></a>
+<span class="sourceLineNo">019</span> * along with this program; if not, see &lt;http://www.gnu.org/licenses&gt;.<a name="line.19"></a>
+<span class="sourceLineNo">020</span> */<a name="line.20"></a>
+<span class="sourceLineNo">021</span>package com.unboundid.ldap.sdk.unboundidds.tools;<a name="line.21"></a>
+<span class="sourceLineNo">022</span><a name="line.22"></a>
+<span class="sourceLineNo">023</span><a name="line.23"></a>
+<span class="sourceLineNo">024</span><a name="line.24"></a>
+<span class="sourceLineNo">025</span>import java.io.File;<a name="line.25"></a>
+<span class="sourceLineNo">026</span>import java.io.FileInputStream;<a name="line.26"></a>
+<span class="sourceLineNo">027</span>import java.io.PrintStream;<a name="line.27"></a>
+<span class="sourceLineNo">028</span>import java.nio.ByteBuffer;<a name="line.28"></a>
+<span class="sourceLineNo">029</span>import java.nio.channels.FileChannel;<a name="line.29"></a>
+<span class="sourceLineNo">030</span>import java.nio.channels.FileLock;<a name="line.30"></a>
+<span class="sourceLineNo">031</span>import java.nio.file.StandardOpenOption;<a name="line.31"></a>
+<span class="sourceLineNo">032</span>import java.nio.file.attribute.FileAttribute;<a name="line.32"></a>
+<span class="sourceLineNo">033</span>import java.nio.file.attribute.PosixFilePermission;<a name="line.33"></a>
+<span class="sourceLineNo">034</span>import java.nio.file.attribute.PosixFilePermissions;<a name="line.34"></a>
+<span class="sourceLineNo">035</span>import java.text.SimpleDateFormat;<a name="line.35"></a>
+<span class="sourceLineNo">036</span>import java.util.Collections;<a name="line.36"></a>
+<span class="sourceLineNo">037</span>import java.util.Date;<a name="line.37"></a>
+<span class="sourceLineNo">038</span>import java.util.EnumSet;<a name="line.38"></a>
+<span class="sourceLineNo">039</span>import java.util.HashSet;<a name="line.39"></a>
+<span class="sourceLineNo">040</span>import java.util.List;<a name="line.40"></a>
+<span class="sourceLineNo">041</span>import java.util.Properties;<a name="line.41"></a>
+<span class="sourceLineNo">042</span>import java.util.Set;<a name="line.42"></a>
+<span class="sourceLineNo">043</span><a name="line.43"></a>
+<span class="sourceLineNo">044</span>import com.unboundid.util.Debug;<a name="line.44"></a>
+<span class="sourceLineNo">045</span>import com.unboundid.util.ObjectPair;<a name="line.45"></a>
+<span class="sourceLineNo">046</span>import com.unboundid.util.StaticUtils;<a name="line.46"></a>
+<span class="sourceLineNo">047</span>import com.unboundid.util.ThreadSafety;<a name="line.47"></a>
+<span class="sourceLineNo">048</span>import com.unboundid.util.ThreadSafetyLevel;<a name="line.48"></a>
+<span class="sourceLineNo">049</span><a name="line.49"></a>
+<span class="sourceLineNo">050</span>import static com.unboundid.ldap.sdk.unboundidds.tools.ToolMessages.*;<a name="line.50"></a>
+<span class="sourceLineNo">051</span><a name="line.51"></a>
+<span class="sourceLineNo">052</span><a name="line.52"></a>
+<span class="sourceLineNo">053</span><a name="line.53"></a>
+<span class="sourceLineNo">054</span>/**<a name="line.54"></a>
+<span class="sourceLineNo">055</span> * This class provides a utility that can log information about the launch and<a name="line.55"></a>
+<span class="sourceLineNo">056</span> * completion of a tool invocation.<a name="line.56"></a>
+<span class="sourceLineNo">057</span> * &lt;BR&gt;<a name="line.57"></a>
+<span class="sourceLineNo">058</span> * &lt;BLOCKQUOTE&gt;<a name="line.58"></a>
+<span class="sourceLineNo">059</span> *   &lt;B&gt;NOTE:&lt;/B&gt;  This class, and other classes within the<a name="line.59"></a>
+<span class="sourceLineNo">060</span> *   {@code com.unboundid.ldap.sdk.unboundidds} package structure, are only<a name="line.60"></a>
+<span class="sourceLineNo">061</span> *   supported for use against Ping Identity, UnboundID, and Alcatel-Lucent 8661<a name="line.61"></a>
+<span class="sourceLineNo">062</span> *   server products.  These classes provide support for proprietary<a name="line.62"></a>
+<span class="sourceLineNo">063</span> *   functionality or for external specifications that are not considered stable<a name="line.63"></a>
+<span class="sourceLineNo">064</span> *   or mature enough to be guaranteed to work in an interoperable way with<a name="line.64"></a>
+<span class="sourceLineNo">065</span> *   other types of LDAP servers.<a name="line.65"></a>
+<span class="sourceLineNo">066</span> * &lt;/BLOCKQUOTE&gt;<a name="line.66"></a>
+<span class="sourceLineNo">067</span> */<a name="line.67"></a>
+<span class="sourceLineNo">068</span>@ThreadSafety(level=ThreadSafetyLevel.COMPLETELY_THREADSAFE)<a name="line.68"></a>
+<span class="sourceLineNo">069</span>public final class ToolInvocationLogger<a name="line.69"></a>
+<span class="sourceLineNo">070</span>{<a name="line.70"></a>
+<span class="sourceLineNo">071</span>  /**<a name="line.71"></a>
+<span class="sourceLineNo">072</span>   * The format string that should be used to format log message timestamps.<a name="line.72"></a>
+<span class="sourceLineNo">073</span>   */<a name="line.73"></a>
+<span class="sourceLineNo">074</span>  private static final String LOG_MESSAGE_DATE_FORMAT =<a name="line.74"></a>
+<span class="sourceLineNo">075</span>       "dd/MMM/yyyy:HH:mm:ss.SSS Z";<a name="line.75"></a>
+<span class="sourceLineNo">076</span><a name="line.76"></a>
+<span class="sourceLineNo">077</span>  /**<a name="line.77"></a>
+<span class="sourceLineNo">078</span>   * The name of a system property that can be used to specify an alternate<a name="line.78"></a>
+<span class="sourceLineNo">079</span>   * instance root path for testing purposes.<a name="line.79"></a>
+<span class="sourceLineNo">080</span>   */<a name="line.80"></a>
+<span class="sourceLineNo">081</span>  static final String PROPERTY_TEST_INSTANCE_ROOT =<a name="line.81"></a>
+<span class="sourceLineNo">082</span>          ToolInvocationLogger.class.getName() + ".testInstanceRootPath";<a name="line.82"></a>
+<span class="sourceLineNo">083</span><a name="line.83"></a>
+<span class="sourceLineNo">084</span>  /**<a name="line.84"></a>
+<span class="sourceLineNo">085</span>   * Prevent this utility class from being instantiated.<a name="line.85"></a>
+<span class="sourceLineNo">086</span>   */<a name="line.86"></a>
+<span class="sourceLineNo">087</span>  private ToolInvocationLogger()<a name="line.87"></a>
+<span class="sourceLineNo">088</span>  {<a name="line.88"></a>
+<span class="sourceLineNo">089</span>    // No implementation is required.<a name="line.89"></a>
+<span class="sourceLineNo">090</span>  }<a name="line.90"></a>
+<span class="sourceLineNo">091</span><a name="line.91"></a>
+<span class="sourceLineNo">092</span><a name="line.92"></a>
+<span class="sourceLineNo">093</span><a name="line.93"></a>
+<span class="sourceLineNo">094</span>  /**<a name="line.94"></a>
+<span class="sourceLineNo">095</span>   * Retrieves an object with a set of information about the invocation logging<a name="line.95"></a>
+<span class="sourceLineNo">096</span>   * that should be performed for the specified tool, if any.<a name="line.96"></a>
+<span class="sourceLineNo">097</span>   *<a name="line.97"></a>
+<span class="sourceLineNo">098</span>   * @param  commandName      The name of the command (without any path<a name="line.98"></a>
+<span class="sourceLineNo">099</span>   *                          information) for the associated tool.  It must not<a name="line.99"></a>
+<span class="sourceLineNo">100</span>   *                          be {@code null}.<a name="line.100"></a>
+<span class="sourceLineNo">101</span>   * @param  logByDefault     Indicates whether the tool indicates that<a name="line.101"></a>
+<span class="sourceLineNo">102</span>   *                          invocation log messages should be generated for<a name="line.102"></a>
+<span class="sourceLineNo">103</span>   *                          the specified tool by default.  This may be<a name="line.103"></a>
+<span class="sourceLineNo">104</span>   *                          overridden by content in the<a name="line.104"></a>
+<span class="sourceLineNo">105</span>   *                          {@code tool-invocation-logging.properties} file,<a name="line.105"></a>
+<span class="sourceLineNo">106</span>   *                          but it will be used in the absence of the<a name="line.106"></a>
+<span class="sourceLineNo">107</span>   *                          properties file or if the properties file does not<a name="line.107"></a>
+<span class="sourceLineNo">108</span>   *                          specify whether logging should be performed for<a name="line.108"></a>
+<span class="sourceLineNo">109</span>   *                          the specified tool.<a name="line.109"></a>
+<span class="sourceLineNo">110</span>   * @param  toolErrorStream  A print stream that may be used to report<a name="line.110"></a>
+<span class="sourceLineNo">111</span>   *                          information about any problems encountered while<a name="line.111"></a>
+<span class="sourceLineNo">112</span>   *                          attempting to perform invocation logging.  It<a name="line.112"></a>
+<span class="sourceLineNo">113</span>   *                          must not be {@code null}.<a name="line.113"></a>
+<span class="sourceLineNo">114</span>   *<a name="line.114"></a>
+<span class="sourceLineNo">115</span>   * @return  An object with a set of information about the invocation logging<a name="line.115"></a>
+<span class="sourceLineNo">116</span>   *          that should be performed for the specified tool.  The<a name="line.116"></a>
+<span class="sourceLineNo">117</span>   *          {@link ToolInvocationLogDetails#logInvocation()} method may<a name="line.117"></a>
+<span class="sourceLineNo">118</span>   *          be used to determine whether invocation logging should be<a name="line.118"></a>
+<span class="sourceLineNo">119</span>   *          performed.<a name="line.119"></a>
+<span class="sourceLineNo">120</span>   */<a name="line.120"></a>
+<span class="sourceLineNo">121</span>  public static ToolInvocationLogDetails getLogMessageDetails(<a name="line.121"></a>
+<span class="sourceLineNo">122</span>                                              final String commandName,<a name="line.122"></a>
+<span class="sourceLineNo">123</span>                                              final boolean logByDefault,<a name="line.123"></a>
+<span class="sourceLineNo">124</span>                                              final PrintStream toolErrorStream)<a name="line.124"></a>
+<span class="sourceLineNo">125</span>  {<a name="line.125"></a>
+<span class="sourceLineNo">126</span>    // Try to figure out the path to the server instance root.  In production<a name="line.126"></a>
+<span class="sourceLineNo">127</span>    // code, we'll look for an INSTANCE_ROOT environment variable to specify<a name="line.127"></a>
+<span class="sourceLineNo">128</span>    // that path, but to facilitate unit testing, we'll allow it to be<a name="line.128"></a>
+<span class="sourceLineNo">129</span>    // overridden by a Java system property so that we can have our own custom<a name="line.129"></a>
+<span class="sourceLineNo">130</span>    // path.<a name="line.130"></a>
+<span class="sourceLineNo">131</span>    final String instanceRootPath =<a name="line.131"></a>
+<span class="sourceLineNo">132</span>         System.getProperty(PROPERTY_TEST_INSTANCE_ROOT);<a name="line.132"></a>
+<span class="sourceLineNo">133</span>    if (instanceRootPath == null)<a name="line.133"></a>
+<span class="sourceLineNo">134</span>    {<a name="line.134"></a>
+<span class="sourceLineNo">135</span>      // FIXME -- Uncomment the next line (and make instanceRootPath non-final)<a name="line.135"></a>
+<span class="sourceLineNo">136</span>      // when we actually want to enable tool invocation logging.<a name="line.136"></a>
+<span class="sourceLineNo">137</span>      // instanceRootPath = System.getenv("INSTANCE_ROOT");<a name="line.137"></a>
+<span class="sourceLineNo">138</span>      if (instanceRootPath == null)<a name="line.138"></a>
+<span class="sourceLineNo">139</span>      {<a name="line.139"></a>
+<span class="sourceLineNo">140</span>        return ToolInvocationLogDetails.createDoNotLogDetails(commandName);<a name="line.140"></a>
+<span class="sourceLineNo">141</span>      }<a name="line.141"></a>
+<span class="sourceLineNo">142</span>    }<a name="line.142"></a>
+<span class="sourceLineNo">143</span><a name="line.143"></a>
+<span class="sourceLineNo">144</span>    final File instanceRootDirectory =<a name="line.144"></a>
+<span class="sourceLineNo">145</span>         new File(instanceRootPath).getAbsoluteFile();<a name="line.145"></a>
+<span class="sourceLineNo">146</span>    if ((!instanceRootDirectory.exists()) ||<a name="line.146"></a>
+<span class="sourceLineNo">147</span>         (!instanceRootDirectory.isDirectory()))<a name="line.147"></a>
+<span class="sourceLineNo">148</span>    {<a name="line.148"></a>
+<span class="sourceLineNo">149</span>      return ToolInvocationLogDetails.createDoNotLogDetails(commandName);<a name="line.149"></a>
+<span class="sourceLineNo">150</span>    }<a name="line.150"></a>
+<span class="sourceLineNo">151</span><a name="line.151"></a>
+<span class="sourceLineNo">152</span><a name="line.152"></a>
+<span class="sourceLineNo">153</span>    // Construct the paths to the default tool invocation log file and to the<a name="line.153"></a>
+<span class="sourceLineNo">154</span>    // logging properties file.<a name="line.154"></a>
+<span class="sourceLineNo">155</span>    final boolean canUseDefaultLog;<a name="line.155"></a>
+<span class="sourceLineNo">156</span>    final File defaultToolInvocationLogFile = StaticUtils.constructPath(<a name="line.156"></a>
+<span class="sourceLineNo">157</span>         instanceRootDirectory, "logs", "tools", "tool-invocation.log");<a name="line.157"></a>
+<span class="sourceLineNo">158</span>    if (defaultToolInvocationLogFile.exists())<a name="line.158"></a>
+<span class="sourceLineNo">159</span>    {<a name="line.159"></a>
+<span class="sourceLineNo">160</span>      canUseDefaultLog = defaultToolInvocationLogFile.isFile();<a name="line.160"></a>
+<span class="sourceLineNo">161</span>    }<a name="line.161"></a>
+<span class="sourceLineNo">162</span>    else<a name="line.162"></a>
+<span class="sourceLineNo">163</span>    {<a name="line.163"></a>
+<span class="sourceLineNo">164</span>      final File parentDirectory = defaultToolInvocationLogFile.getParentFile();<a name="line.164"></a>
+<span class="sourceLineNo">165</span>      canUseDefaultLog =<a name="line.165"></a>
+<span class="sourceLineNo">166</span>           (parentDirectory.exists() &amp;&amp; parentDirectory.isDirectory());<a name="line.166"></a>
+<span class="sourceLineNo">167</span>    }<a name="line.167"></a>
+<span class="sourceLineNo">168</span><a name="line.168"></a>
+<span class="sourceLineNo">169</span>    final File invocationLoggingPropertiesFile = StaticUtils.constructPath(<a name="line.169"></a>
+<span class="sourceLineNo">170</span>         instanceRootDirectory, "config", "tool-invocation-logging.properties");<a name="line.170"></a>
+<span class="sourceLineNo">171</span><a name="line.171"></a>
+<span class="sourceLineNo">172</span><a name="line.172"></a>
+<span class="sourceLineNo">173</span>    // If the properties file doesn't exist, then just use the logByDefault<a name="line.173"></a>
+<span class="sourceLineNo">174</span>    // setting in conjunction with the default tool invocation log file.<a name="line.174"></a>
+<span class="sourceLineNo">175</span>    if (!invocationLoggingPropertiesFile.exists())<a name="line.175"></a>
+<span class="sourceLineNo">176</span>    {<a name="line.176"></a>
+<span class="sourceLineNo">177</span>      if (logByDefault &amp;&amp; canUseDefaultLog)<a name="line.177"></a>
+<span class="sourceLineNo">178</span>      {<a name="line.178"></a>
+<span class="sourceLineNo">179</span>        return ToolInvocationLogDetails.createLogDetails(commandName, null,<a name="line.179"></a>
+<span class="sourceLineNo">180</span>             Collections.singleton(defaultToolInvocationLogFile),<a name="line.180"></a>
+<span class="sourceLineNo">181</span>             toolErrorStream);<a name="line.181"></a>
+<span class="sourceLineNo">182</span>      }<a name="line.182"></a>
+<span class="sourceLineNo">183</span>      else<a name="line.183"></a>
+<span class="sourceLineNo">184</span>      {<a name="line.184"></a>
+<span class="sourceLineNo">185</span>        return ToolInvocationLogDetails.createDoNotLogDetails(commandName);<a name="line.185"></a>
+<span class="sourceLineNo">186</span>      }<a name="line.186"></a>
+<span class="sourceLineNo">187</span>    }<a name="line.187"></a>
+<span class="sourceLineNo">188</span><a name="line.188"></a>
+<span class="sourceLineNo">189</span><a name="line.189"></a>
+<span class="sourceLineNo">190</span>    // Load the properties file.  If this fails, then report an error and do not<a name="line.190"></a>
+<span class="sourceLineNo">191</span>    // attempt any additional logging.<a name="line.191"></a>
+<span class="sourceLineNo">192</span>    final Properties loggingProperties = new Properties();<a name="line.192"></a>
+<span class="sourceLineNo">193</span>    try (FileInputStream inputStream =<a name="line.193"></a>
+<span class="sourceLineNo">194</span>              new FileInputStream(invocationLoggingPropertiesFile))<a name="line.194"></a>
+<span class="sourceLineNo">195</span>    {<a name="line.195"></a>
+<span class="sourceLineNo">196</span>      loggingProperties.load(inputStream);<a name="line.196"></a>
+<span class="sourceLineNo">197</span>    }<a name="line.197"></a>
+<span class="sourceLineNo">198</span>    catch (final Exception e)<a name="line.198"></a>
+<span class="sourceLineNo">199</span>    {<a name="line.199"></a>
+<span class="sourceLineNo">200</span>      Debug.debugException(e);<a name="line.200"></a>
+<span class="sourceLineNo">201</span>      printError(<a name="line.201"></a>
+<span class="sourceLineNo">202</span>           ERR_TOOL_LOGGER_ERROR_LOADING_PROPERTIES_FILE.get(<a name="line.202"></a>
+<span class="sourceLineNo">203</span>                invocationLoggingPropertiesFile.getAbsolutePath(),<a name="line.203"></a>
+<span class="sourceLineNo">204</span>                StaticUtils.getExceptionMessage(e)),<a name="line.204"></a>
+<span class="sourceLineNo">205</span>           toolErrorStream);<a name="line.205"></a>
+<span class="sourceLineNo">206</span>      return ToolInvocationLogDetails.createDoNotLogDetails(commandName);<a name="line.206"></a>
+<span class="sourceLineNo">207</span>    }<a name="line.207"></a>
+<span class="sourceLineNo">208</span><a name="line.208"></a>
+<span class="sourceLineNo">209</span><a name="line.209"></a>
+<span class="sourceLineNo">210</span>    // See if there is a tool-specific property that indicates whether to<a name="line.210"></a>
+<span class="sourceLineNo">211</span>    // perform invocation logging for the tool.<a name="line.211"></a>
+<span class="sourceLineNo">212</span>    Boolean logInvocation = getBooleanProperty(<a name="line.212"></a>
+<span class="sourceLineNo">213</span>         commandName + ".log-tool-invocations", loggingProperties,<a name="line.213"></a>
+<span class="sourceLineNo">214</span>         invocationLoggingPropertiesFile, null, toolErrorStream);<a name="line.214"></a>
+<span class="sourceLineNo">215</span><a name="line.215"></a>
+<span class="sourceLineNo">216</span><a name="line.216"></a>
+<span class="sourceLineNo">217</span>    // If there wasn't a valid tool-specific property to indicate whether to<a name="line.217"></a>
+<span class="sourceLineNo">218</span>    // perform invocation logging, then see if there is a default property for<a name="line.218"></a>
+<span class="sourceLineNo">219</span>    // all tools.<a name="line.219"></a>
+<span class="sourceLineNo">220</span>    if (logInvocation == null)<a name="line.220"></a>
+<span class="sourceLineNo">221</span>    {<a name="line.221"></a>
+<span class="sourceLineNo">222</span>      logInvocation = getBooleanProperty("default.log-tool-invocations",<a name="line.222"></a>
+<span class="sourceLineNo">223</span>           loggingProperties, invocationLoggingPropertiesFile, null,<a name="line.223"></a>
+<span class="sourceLineNo">224</span>           toolErrorStream);<a name="line.224"></a>
+<span class="sourceLineNo">225</span>    }<a name="line.225"></a>
+<span class="sourceLineNo">226</span><a name="line.226"></a>
+<span class="sourceLineNo">227</span><a name="line.227"></a>
+<span class="sourceLineNo">228</span>    // If we still don't know whether to log the invocation, then use the<a name="line.228"></a>
+<span class="sourceLineNo">229</span>    // default setting for the tool.<a name="line.229"></a>
+<span class="sourceLineNo">230</span>    if (logInvocation == null)<a name="line.230"></a>
+<span class="sourceLineNo">231</span>    {<a name="line.231"></a>
+<span class="sourceLineNo">232</span>      logInvocation = logByDefault;<a name="line.232"></a>
+<span class="sourceLineNo">233</span>    }<a name="line.233"></a>
+<span class="sourceLineNo">234</span><a name="line.234"></a>
+<span class="sourceLineNo">235</span><a name="line.235"></a>
+<span class="sourceLineNo">236</span>    // If we shouldn't log the invocation, then return a "no log" result now.<a name="line.236"></a>
+<span class="sourceLineNo">237</span>    if (!logInvocation)<a name="line.237"></a>
+<span class="sourceLineNo">238</span>    {<a name="line.238"></a>
+<span class="sourceLineNo">239</span>      return ToolInvocationLogDetails.createDoNotLogDetails(commandName);<a name="line.239"></a>
+<span class="sourceLineNo">240</span>    }<a name="line.240"></a>
+<span class="sourceLineNo">241</span><a name="line.241"></a>
+<span class="sourceLineNo">242</span><a name="line.242"></a>
+<span class="sourceLineNo">243</span>    // See if there is a tool-specific property that specifies a log file path.<a name="line.243"></a>
+<span class="sourceLineNo">244</span>    final Set&lt;File&gt; logFiles = new HashSet&lt;&gt;(2);<a name="line.244"></a>
+<span class="sourceLineNo">245</span>    final String toolSpecificLogFilePathPropertyName =<a name="line.245"></a>
+<span class="sourceLineNo">246</span>         commandName + ".log-file-path";<a name="line.246"></a>
+<span class="sourceLineNo">247</span>    final File toolSpecificLogFile = getLogFileProperty(<a name="line.247"></a>
+<span class="sourceLineNo">248</span>         toolSpecificLogFilePathPropertyName, loggingProperties,<a name="line.248"></a>
+<span class="sourceLineNo">249</span>         invocationLoggingPropertiesFile, instanceRootDirectory,<a name="line.249"></a>
+<span class="sourceLineNo">250</span>         toolErrorStream);<a name="line.250"></a>
+<span class="sourceLineNo">251</span>    if (toolSpecificLogFile != null)<a name="line.251"></a>
+<span class="sourceLineNo">252</span>    {<a name="line.252"></a>
+<span class="sourceLineNo">253</span>      logFiles.add(toolSpecificLogFile);<a name="line.253"></a>
+<span class="sourceLineNo">254</span>    }<a name="line.254"></a>
+<span class="sourceLineNo">255</span><a name="line.255"></a>
+<span class="sourceLineNo">256</span><a name="line.256"></a>
+<span class="sourceLineNo">257</span>    // See if the tool should be included in the default log file.<a name="line.257"></a>
+<span class="sourceLineNo">258</span>    if (getBooleanProperty(commandName + ".include-in-default-log",<a name="line.258"></a>
+<span class="sourceLineNo">259</span>         loggingProperties, invocationLoggingPropertiesFile, true,<a name="line.259"></a>
+<span class="sourceLineNo">260</span>         toolErrorStream))<a name="line.260"></a>
+<span class="sourceLineNo">261</span>    {<a name="line.261"></a>
+<span class="sourceLineNo">262</span>      // See if there is a property that specifies a default log file path.<a name="line.262"></a>
+<span class="sourceLineNo">263</span>      // Otherwise, try to use the default path that we constructed earlier.<a name="line.263"></a>
+<span class="sourceLineNo">264</span>      final String defaultLogFilePathPropertyName = "default.log-file-path";<a name="line.264"></a>
+<span class="sourceLineNo">265</span>      final File defaultLogFile = getLogFileProperty(<a name="line.265"></a>
+<span class="sourceLineNo">266</span>           defaultLogFilePathPropertyName, loggingProperties,<a name="line.266"></a>
+<span class="sourceLineNo">267</span>           invocationLoggingPropertiesFile, instanceRootDirectory,<a name="line.267"></a>
+<span class="sourceLineNo">268</span>           toolErrorStream);<a name="line.268"></a>
+<span class="sourceLineNo">269</span>      if (defaultLogFile != null)<a name="line.269"></a>
+<span class="sourceLineNo">270</span>      {<a name="line.270"></a>
+<span class="sourceLineNo">271</span>        logFiles.add(defaultLogFile);<a name="line.271"></a>
+<span class="sourceLineNo">272</span>      }<a name="line.272"></a>
+<span class="sourceLineNo">273</span>      else if (canUseDefaultLog)<a name="line.273"></a>
+<span class="sourceLineNo">274</span>      {<a name="line.274"></a>
+<span class="sourceLineNo">275</span>        logFiles.add(defaultToolInvocationLogFile);<a name="line.275"></a>
+<span class="sourceLineNo">276</span>      }<a name="line.276"></a>
+<span class="sourceLineNo">277</span>      else<a name="line.277"></a>
+<span class="sourceLineNo">278</span>      {<a name="line.278"></a>
+<span class="sourceLineNo">279</span>        printError(<a name="line.279"></a>
+<span class="sourceLineNo">280</span>             ERR_TOOL_LOGGER_NO_LOG_FILES.get(commandName,<a name="line.280"></a>
+<span class="sourceLineNo">281</span>                  invocationLoggingPropertiesFile.getAbsolutePath(),<a name="line.281"></a>
+<span class="sourceLineNo">282</span>                  toolSpecificLogFilePathPropertyName,<a name="line.282"></a>
+<span class="sourceLineNo">283</span>                  defaultLogFilePathPropertyName),<a name="line.283"></a>
+<span class="sourceLineNo">284</span>             toolErrorStream);<a name="line.284"></a>
+<span class="sourceLineNo">285</span>      }<a name="line.285"></a>
+<span class="sourceLineNo">286</span>    }<a name="line.286"></a>
+<span class="sourceLineNo">287</span><a name="line.287"></a>
+<span class="sourceLineNo">288</span><a name="line.288"></a>
+<span class="sourceLineNo">289</span>    // If the set of log files is empty, then don't log anything.  Otherwise, we<a name="line.289"></a>
+<span class="sourceLineNo">290</span>    // can and should perform invocation logging.<a name="line.290"></a>
+<span class="sourceLineNo">291</span>    if (logFiles.isEmpty())<a name="line.291"></a>
+<span class="sourceLineNo">292</span>    {<a name="line.292"></a>
+<span class="sourceLineNo">293</span>      return ToolInvocationLogDetails.createDoNotLogDetails(commandName);<a name="line.293"></a>
+<span class="sourceLineNo">294</span>    }<a name="line.294"></a>
+<span class="sourceLineNo">295</span>    else<a name="line.295"></a>
+<span class="sourceLineNo">296</span>    {<a name="line.296"></a>
+<span class="sourceLineNo">297</span>      return ToolInvocationLogDetails.createLogDetails(commandName, null,<a name="line.297"></a>
+<span class="sourceLineNo">298</span>           logFiles, toolErrorStream);<a name="line.298"></a>
+<span class="sourceLineNo">299</span>    }<a name="line.299"></a>
+<span class="sourceLineNo">300</span>  }<a name="line.300"></a>
+<span class="sourceLineNo">301</span><a name="line.301"></a>
+<span class="sourceLineNo">302</span><a name="line.302"></a>
+<span class="sourceLineNo">303</span><a name="line.303"></a>
+<span class="sourceLineNo">304</span>  /**<a name="line.304"></a>
+<span class="sourceLineNo">305</span>   * Retrieves the Boolean value of the specified property from the set of tool<a name="line.305"></a>
+<span class="sourceLineNo">306</span>   * properties.<a name="line.306"></a>
+<span class="sourceLineNo">307</span>   *<a name="line.307"></a>
+<span class="sourceLineNo">308</span>   * @param  propertyName        The name of the property to retrieve.<a name="line.308"></a>
+<span class="sourceLineNo">309</span>   * @param  properties          The set of tool properties.<a name="line.309"></a>
+<span class="sourceLineNo">310</span>   * @param  propertiesFilePath  The path to the properties file.<a name="line.310"></a>
+<span class="sourceLineNo">311</span>   * @param  defaultValue        The default value that should be returned if<a name="line.311"></a>
+<span class="sourceLineNo">312</span>   *                             the property isn't set or has an invalid value.<a name="line.312"></a>
+<span class="sourceLineNo">313</span>   * @param  toolErrorStream     A print stream that may be used to report<a name="line.313"></a>
+<span class="sourceLineNo">314</span>   *                             information about any problems encountered<a name="line.314"></a>
+<span class="sourceLineNo">315</span>   *                             while attempting to perform invocation logging.<a name="line.315"></a>
+<span class="sourceLineNo">316</span>   *                             It must not be {@code null}.<a name="line.316"></a>
+<span class="sourceLineNo">317</span>   *<a name="line.317"></a>
+<span class="sourceLineNo">318</span>   * @return  {@code true} if the specified property exists with a value of<a name="line.318"></a>
+<span class="sourceLineNo">319</span>   *          {@code true}, {@code false} if the specified property exists with<a name="line.319"></a>
+<span class="sourceLineNo">320</span>   *          a value of {@code false}, or the default value if the property<a name="line.320"></a>
+<span class="sourceLineNo">321</span>   *          doesn't exist or has a value that is neither {@code true} nor<a name="line.321"></a>
+<span class="sourceLineNo">322</span>   *          {@code false}.<a name="line.322"></a>
+<span class="sourceLineNo">323</span>   */<a name="line.323"></a>
+<span class="sourceLineNo">324</span>   private static Boolean getBooleanProperty(final String propertyName,<a name="line.324"></a>
+<span class="sourceLineNo">325</span>                                             final Properties properties,<a name="line.325"></a>
+<span class="sourceLineNo">326</span>                                             final File propertiesFilePath,<a name="line.326"></a>
+<span class="sourceLineNo">327</span>                                             final Boolean defaultValue,<a name="line.327"></a>
+<span class="sourceLineNo">328</span>                                             final PrintStream toolErrorStream)<a name="line.328"></a>
+<span class="sourceLineNo">329</span>   {<a name="line.329"></a>
+<span class="sourceLineNo">330</span>     final String propertyValue = properties.getProperty(propertyName);<a name="line.330"></a>
+<span class="sourceLineNo">331</span>     if (propertyValue == null)<a name="line.331"></a>
+<span class="sourceLineNo">332</span>     {<a name="line.332"></a>
+<span class="sourceLineNo">333</span>       return defaultValue;<a name="line.333"></a>
+<span class="sourceLineNo">334</span>     }<a name="line.334"></a>
+<span class="sourceLineNo">335</span><a name="line.335"></a>
+<span class="sourceLineNo">336</span>     if (propertyValue.equalsIgnoreCase("true"))<a name="line.336"></a>
+<span class="sourceLineNo">337</span>     {<a name="line.337"></a>
+<span class="sourceLineNo">338</span>       return true;<a name="line.338"></a>
+<span class="sourceLineNo">339</span>     }<a name="line.339"></a>
+<span class="sourceLineNo">340</span>     else if (propertyValue.equalsIgnoreCase("false"))<a name="line.340"></a>
+<span class="sourceLineNo">341</span>     {<a name="line.341"></a>
+<span class="sourceLineNo">342</span>       return false;<a name="line.342"></a>
+<span class="sourceLineNo">343</span>     }<a name="line.343"></a>
+<span class="sourceLineNo">344</span>     else<a name="line.344"></a>
+<span class="sourceLineNo">345</span>     {<a name="line.345"></a>
+<span class="sourceLineNo">346</span>      printError(<a name="line.346"></a>
+<span class="sourceLineNo">347</span>           ERR_TOOL_LOGGER_CANNOT_PARSE_BOOLEAN_PROPERTY.get(propertyValue,<a name="line.347"></a>
+<span class="sourceLineNo">348</span>                propertyName, propertiesFilePath.getAbsolutePath()),<a name="line.348"></a>
+<span class="sourceLineNo">349</span>           toolErrorStream);<a name="line.349"></a>
+<span class="sourceLineNo">350</span>       return defaultValue;<a name="line.350"></a>
+<span class="sourceLineNo">351</span>     }<a name="line.351"></a>
+<span class="sourceLineNo">352</span>   }<a name="line.352"></a>
+<span class="sourceLineNo">353</span><a name="line.353"></a>
+<span class="sourceLineNo">354</span><a name="line.354"></a>
+<span class="sourceLineNo">355</span><a name="line.355"></a>
+<span class="sourceLineNo">356</span>  /**<a name="line.356"></a>
+<span class="sourceLineNo">357</span>   * Retrieves a file referenced by the specified property from the set of<a name="line.357"></a>
+<span class="sourceLineNo">358</span>   * tool properties.<a name="line.358"></a>
+<span class="sourceLineNo">359</span>   *<a name="line.359"></a>
+<span class="sourceLineNo">360</span>   * @param  propertyName           The name of the property to retrieve.<a name="line.360"></a>
+<span class="sourceLineNo">361</span>   * @param  properties             The set of tool properties.<a name="line.361"></a>
+<span class="sourceLineNo">362</span>   * @param  propertiesFilePath     The path to the properties file.<a name="line.362"></a>
+<span class="sourceLineNo">363</span>   * @param  instanceRootDirectory  The path to the server's instance root<a name="line.363"></a>
+<span class="sourceLineNo">364</span>   *                                directory.<a name="line.364"></a>
+<span class="sourceLineNo">365</span>   * @param  toolErrorStream        A print stream that may be used to report<a name="line.365"></a>
+<span class="sourceLineNo">366</span>   *                                information about any problems encountered<a name="line.366"></a>
+<span class="sourceLineNo">367</span>   *                                while attempting to perform invocation<a name="line.367"></a>
+<span class="sourceLineNo">368</span>   *                                logging.  It must not be {@code null}.<a name="line.368"></a>
+<span class="sourceLineNo">369</span>   *<a name="line.369"></a>
+<span class="sourceLineNo">370</span>   * @return  A file referenced by the specified property, or {@code null} if<a name="line.370"></a>
+<span class="sourceLineNo">371</span>   *          the property is not set or does not reference a valid path.<a name="line.371"></a>
+<span class="sourceLineNo">372</span>   */<a name="line.372"></a>
+<span class="sourceLineNo">373</span>  private static File getLogFileProperty(final String propertyName,<a name="line.373"></a>
+<span class="sourceLineNo">374</span>                                         final Properties properties,<a name="line.374"></a>
+<span class="sourceLineNo">375</span>                                         final File propertiesFilePath,<a name="line.375"></a>
+<span class="sourceLineNo">376</span>                                         final File instanceRootDirectory,<a name="line.376"></a>
+<span class="sourceLineNo">377</span>                                         final PrintStream toolErrorStream)<a name="line.377"></a>
+<span class="sourceLineNo">378</span>  {<a name="line.378"></a>
+<span class="sourceLineNo">379</span>    final String propertyValue = properties.getProperty(propertyName);<a name="line.379"></a>
+<span class="sourceLineNo">380</span>    if (propertyValue == null)<a name="line.380"></a>
+<span class="sourceLineNo">381</span>    {<a name="line.381"></a>
+<span class="sourceLineNo">382</span>      return null;<a name="line.382"></a>
+<span class="sourceLineNo">383</span>    }<a name="line.383"></a>
+<span class="sourceLineNo">384</span><a name="line.384"></a>
+<span class="sourceLineNo">385</span>    final File absoluteFile;<a name="line.385"></a>
+<span class="sourceLineNo">386</span>    final File configuredFile = new File(propertyValue);<a name="line.386"></a>
+<span class="sourceLineNo">387</span>    if (configuredFile.isAbsolute())<a name="line.387"></a>
+<span class="sourceLineNo">388</span>    {<a name="line.388"></a>
+<span class="sourceLineNo">389</span>      absoluteFile = configuredFile;<a name="line.389"></a>
+<span class="sourceLineNo">390</span>    }<a name="line.390"></a>
+<span class="sourceLineNo">391</span>    else<a name="line.391"></a>
+<span class="sourceLineNo">392</span>    {<a name="line.392"></a>
+<span class="sourceLineNo">393</span>      absoluteFile = new File(instanceRootDirectory.getAbsolutePath() +<a name="line.393"></a>
+<span class="sourceLineNo">394</span>           File.separator + propertyValue);<a name="line.394"></a>
+<span class="sourceLineNo">395</span>    }<a name="line.395"></a>
+<span class="sourceLineNo">396</span><a name="line.396"></a>
+<span class="sourceLineNo">397</span>    if (absoluteFile.exists())<a name="line.397"></a>
+<span class="sourceLineNo">398</span>    {<a name="line.398"></a>
+<span class="sourceLineNo">399</span>      if (absoluteFile.isFile())<a name="line.399"></a>
+<span class="sourceLineNo">400</span>      {<a name="line.400"></a>
+<span class="sourceLineNo">401</span>        return absoluteFile;<a name="line.401"></a>
+<span class="sourceLineNo">402</span>      }<a name="line.402"></a>
+<span class="sourceLineNo">403</span>      else<a name="line.403"></a>
+<span class="sourceLineNo">404</span>      {<a name="line.404"></a>
+<span class="sourceLineNo">405</span>        printError(<a name="line.405"></a>
+<span class="sourceLineNo">406</span>             ERR_TOOL_LOGGER_PATH_NOT_FILE.get(propertyValue, propertyName,<a name="line.406"></a>
+<span class="sourceLineNo">407</span>                  propertiesFilePath.getAbsolutePath()),<a name="line.407"></a>
+<span class="sourceLineNo">408</span>             toolErrorStream);<a name="line.408"></a>
+<span class="sourceLineNo">409</span>      }<a name="line.409"></a>
+<span class="sourceLineNo">410</span>    }<a name="line.410"></a>
+<span class="sourceLineNo">411</span>    else<a name="line.411"></a>
+<span class="sourceLineNo">412</span>    {<a name="line.412"></a>
+<span class="sourceLineNo">413</span>      final File parentFile = absoluteFile.getParentFile();<a name="line.413"></a>
+<span class="sourceLineNo">414</span>      if (parentFile.exists() &amp;&amp; parentFile.isDirectory())<a name="line.414"></a>
+<span class="sourceLineNo">415</span>      {<a name="line.415"></a>
+<span class="sourceLineNo">416</span>        return absoluteFile;<a name="line.416"></a>
+<span class="sourceLineNo">417</span>      }<a name="line.417"></a>
+<span class="sourceLineNo">418</span>      else<a name="line.418"></a>
+<span class="sourceLineNo">419</span>      {<a name="line.419"></a>
+<span class="sourceLineNo">420</span>        printError(<a name="line.420"></a>
+<span class="sourceLineNo">421</span>             ERR_TOOL_LOGGER_PATH_PARENT_MISSING.get(propertyValue,<a name="line.421"></a>
+<span class="sourceLineNo">422</span>                  propertyName, propertiesFilePath.getAbsolutePath(),<a name="line.422"></a>
+<span class="sourceLineNo">423</span>                  parentFile.getAbsolutePath()),<a name="line.423"></a>
+<span class="sourceLineNo">424</span>             toolErrorStream);<a name="line.424"></a>
+<span class="sourceLineNo">425</span>      }<a name="line.425"></a>
+<span class="sourceLineNo">426</span>    }<a name="line.426"></a>
+<span class="sourceLineNo">427</span><a name="line.427"></a>
+<span class="sourceLineNo">428</span>    return null;<a name="line.428"></a>
+<span class="sourceLineNo">429</span>  }<a name="line.429"></a>
+<span class="sourceLineNo">430</span><a name="line.430"></a>
+<span class="sourceLineNo">431</span><a name="line.431"></a>
+<span class="sourceLineNo">432</span><a name="line.432"></a>
+<span class="sourceLineNo">433</span>  /**<a name="line.433"></a>
+<span class="sourceLineNo">434</span>   * Logs a message about the launch of the specified tool.  This method must<a name="line.434"></a>
+<span class="sourceLineNo">435</span>   * acquire an exclusive lock on each log file before attempting to append any<a name="line.435"></a>
+<span class="sourceLineNo">436</span>   * data to it.<a name="line.436"></a>
+<span class="sourceLineNo">437</span>   *<a name="line.437"></a>
+<span class="sourceLineNo">438</span>   * @param  logDetails               The tool invocation log details object<a name="line.438"></a>
+<span class="sourceLineNo">439</span>   *                                  obtained from running the<a name="line.439"></a>
+<span class="sourceLineNo">440</span>   *                                  {@link #getLogMessageDetails} method.  It<a name="line.440"></a>
+<span class="sourceLineNo">441</span>   *                                  must not be {@code null}.<a name="line.441"></a>
+<span class="sourceLineNo">442</span>   * @param  commandLineArguments     A list of the name-value pairs for any<a name="line.442"></a>
+<span class="sourceLineNo">443</span>   *                                  command-line arguments provided when<a name="line.443"></a>
+<span class="sourceLineNo">444</span>   *                                  running the program.  This must not be<a name="line.444"></a>
+<span class="sourceLineNo">445</span>   *                                  {@code null}, but it may be empty.<a name="line.445"></a>
+<span class="sourceLineNo">446</span>   *                                  &lt;BR&gt;&lt;BR&gt;<a name="line.446"></a>
+<span class="sourceLineNo">447</span>   *                                  For a tool run in interactive mode, this<a name="line.447"></a>
+<span class="sourceLineNo">448</span>   *                                  should be the arguments that would have<a name="line.448"></a>
+<span class="sourceLineNo">449</span>   *                                  been provided if the tool had been invoked<a name="line.449"></a>
+<span class="sourceLineNo">450</span>   *                                  non-interactively.  For any arguments that<a name="line.450"></a>
+<span class="sourceLineNo">451</span>   *                                  have a name but no value (including<a name="line.451"></a>
+<span class="sourceLineNo">452</span>   *                                  Boolean arguments and subcommand names),<a name="line.452"></a>
+<span class="sourceLineNo">453</span>   *                                  or for unnamed trailing arguments, the<a name="line.453"></a>
+<span class="sourceLineNo">454</span>   *                                  first item in the pair should be<a name="line.454"></a>
+<span class="sourceLineNo">455</span>   *                                  non-{@code null} and the second item<a name="line.455"></a>
+<span class="sourceLineNo">456</span>   *                                  should be {@code null}.  For arguments<a name="line.456"></a>
+<span class="sourceLineNo">457</span>   *                                  whose values may contain sensitive<a name="line.457"></a>
+<span class="sourceLineNo">458</span>   *                                  information, the value should have already<a name="line.458"></a>
+<span class="sourceLineNo">459</span>   *                                  been replaced with the string<a name="line.459"></a>
+<span class="sourceLineNo">460</span>   *                                  "***REDACTED***".<a name="line.460"></a>
+<span class="sourceLineNo">461</span>   * @param  propertiesFileArguments  A list of the name-value pairs for any<a name="line.461"></a>
+<span class="sourceLineNo">462</span>   *                                  arguments obtained from a properties file<a name="line.462"></a>
+<span class="sourceLineNo">463</span>   *                                  rather than being supplied on the command<a name="line.463"></a>
+<span class="sourceLineNo">464</span>   *                                  line.  This must not be {@code null}, but<a name="line.464"></a>
+<span class="sourceLineNo">465</span>   *                                  may be empty.  The same constraints<a name="line.465"></a>
+<span class="sourceLineNo">466</span>   *                                  specified for the<a name="line.466"></a>
+<span class="sourceLineNo">467</span>   *                                  {@code commandLineArguments} parameter<a name="line.467"></a>
+<span class="sourceLineNo">468</span>   *                                  also apply to this parameter.<a name="line.468"></a>
+<span class="sourceLineNo">469</span>   * @param  propertiesFilePath       The path to the properties file from which<a name="line.469"></a>
+<span class="sourceLineNo">470</span>   *                                  the {@code propertiesFileArguments} values<a name="line.470"></a>
+<span class="sourceLineNo">471</span>   *                                  were obtained.<a name="line.471"></a>
+<span class="sourceLineNo">472</span>   */<a name="line.472"></a>
+<span class="sourceLineNo">473</span>  public static void logLaunchMessage(<a name="line.473"></a>
+<span class="sourceLineNo">474</span>          final ToolInvocationLogDetails logDetails,<a name="line.474"></a>
+<span class="sourceLineNo">475</span>          final List&lt;ObjectPair&lt;String,String&gt;&gt; commandLineArguments,<a name="line.475"></a>
+<span class="sourceLineNo">476</span>          final List&lt;ObjectPair&lt;String,String&gt;&gt; propertiesFileArguments,<a name="line.476"></a>
+<span class="sourceLineNo">477</span>          final String propertiesFilePath)<a name="line.477"></a>
+<span class="sourceLineNo">478</span>  {<a name="line.478"></a>
+<span class="sourceLineNo">479</span>    // Build the log message.<a name="line.479"></a>
+<span class="sourceLineNo">480</span>    final StringBuilder msgBuffer = new StringBuilder();<a name="line.480"></a>
+<span class="sourceLineNo">481</span>    final SimpleDateFormat dateFormat =<a name="line.481"></a>
+<span class="sourceLineNo">482</span>         new SimpleDateFormat(LOG_MESSAGE_DATE_FORMAT);<a name="line.482"></a>
+<span class="sourceLineNo">483</span><a name="line.483"></a>
+<span class="sourceLineNo">484</span>    msgBuffer.append("# [");<a name="line.484"></a>
+<span class="sourceLineNo">485</span>    msgBuffer.append(dateFormat.format(new Date()));<a name="line.485"></a>
+<span class="sourceLineNo">486</span>    msgBuffer.append(']');<a name="line.486"></a>
+<span class="sourceLineNo">487</span>    msgBuffer.append(StaticUtils.EOL);<a name="line.487"></a>
+<span class="sourceLineNo">488</span>    msgBuffer.append("# Command Name: ");<a name="line.488"></a>
+<span class="sourceLineNo">489</span>    msgBuffer.append(logDetails.getCommandName());<a name="line.489"></a>
+<span class="sourceLineNo">490</span>    msgBuffer.append(StaticUtils.EOL);<a name="line.490"></a>
+<span class="sourceLineNo">491</span>    msgBuffer.append("# Invocation ID: ");<a name="line.491"></a>
+<span class="sourceLineNo">492</span>    msgBuffer.append(logDetails.getInvocationID());<a name="line.492"></a>
+<span class="sourceLineNo">493</span>    msgBuffer.append(StaticUtils.EOL);<a name="line.493"></a>
+<span class="sourceLineNo">494</span><a name="line.494"></a>
+<span class="sourceLineNo">495</span>    final String systemUserName = System.getProperty("user.name");<a name="line.495"></a>
+<span class="sourceLineNo">496</span>    if ((systemUserName != null) &amp;&amp; (systemUserName.length() &gt; 0))<a name="line.496"></a>
+<span class="sourceLineNo">497</span>    {<a name="line.497"></a>
+<span class="sourceLineNo">498</span>      msgBuffer.append("# System User: ");<a name="line.498"></a>
+<span class="sourceLineNo">499</span>      msgBuffer.append(systemUserName);<a name="line.499"></a>
+<span class="sourceLineNo">500</span>      msgBuffer.append(StaticUtils.EOL);<a name="line.500"></a>
+<span class="sourceLineNo">501</span>    }<a name="line.501"></a>
+<span class="sourceLineNo">502</span><a name="line.502"></a>
+<span class="sourceLineNo">503</span>    if (! propertiesFileArguments.isEmpty())<a name="line.503"></a>
+<span class="sourceLineNo">504</span>    {<a name="line.504"></a>
+<span class="sourceLineNo">505</span>      msgBuffer.append("# Arguments obtained from '");<a name="line.505"></a>
+<span class="sourceLineNo">506</span>      msgBuffer.append(propertiesFilePath);<a name="line.506"></a>
+<span class="sourceLineNo">507</span>      msgBuffer.append("':");<a name="line.507"></a>
+<span class="sourceLineNo">508</span>      msgBuffer.append(StaticUtils.EOL);<a name="line.508"></a>
+<span class="sourceLineNo">509</span><a name="line.509"></a>
+<span class="sourceLineNo">510</span>      for (final ObjectPair&lt;String,String&gt; argPair : propertiesFileArguments)<a name="line.510"></a>
+<span class="sourceLineNo">511</span>      {<a name="line.511"></a>
+<span class="sourceLineNo">512</span>        msgBuffer.append("#      ");<a name="line.512"></a>
+<span class="sourceLineNo">513</span><a name="line.513"></a>
+<span class="sourceLineNo">514</span>        final String name = argPair.getFirst();<a name="line.514"></a>
+<span class="sourceLineNo">515</span>        if (name.startsWith("-"))<a name="line.515"></a>
+<span class="sourceLineNo">516</span>        {<a name="line.516"></a>
+<span class="sourceLineNo">517</span>          msgBuffer.append(name);<a name="line.517"></a>
+<span class="sourceLineNo">518</span>        }<a name="line.518"></a>
+<span class="sourceLineNo">519</span>        else<a name="line.519"></a>
+<span class="sourceLineNo">520</span>        {<a name="line.520"></a>
+<span class="sourceLineNo">521</span>          msgBuffer.append(StaticUtils.cleanExampleCommandLineArgument(name));<a name="line.521"></a>
+<span class="sourceLineNo">522</span>        }<a name="line.522"></a>
+<span class="sourceLineNo">523</span><a name="line.523"></a>
+<span class="sourceLineNo">524</span>        final String value = argPair.getSecond();<a name="line.524"></a>
+<span class="sourceLineNo">525</span>        if (value != null)<a name="line.525"></a>
+<span class="sourceLineNo">526</span>        {<a name="line.526"></a>
+<span class="sourceLineNo">527</span>          msgBuffer.append(' ');<a name="line.527"></a>
+<span class="sourceLineNo">528</span>          msgBuffer.append(StaticUtils.cleanExampleCommandLineArgument(value));<a name="line.528"></a>
+<span class="sourceLineNo">529</span>        }<a name="line.529"></a>
+<span class="sourceLineNo">530</span><a name="line.530"></a>
+<span class="sourceLineNo">531</span>        msgBuffer.append(StaticUtils.EOL);<a name="line.531"></a>
+<span class="sourceLineNo">532</span>      }<a name="line.532"></a>
+<span class="sourceLineNo">533</span>    }<a name="line.533"></a>
+<span class="sourceLineNo">534</span><a name="line.534"></a>
+<span class="sourceLineNo">535</span>    msgBuffer.append(logDetails.getCommandName());<a name="line.535"></a>
+<span class="sourceLineNo">536</span>    for (final ObjectPair&lt;String,String&gt; argPair : commandLineArguments)<a name="line.536"></a>
+<span class="sourceLineNo">537</span>    {<a name="line.537"></a>
+<span class="sourceLineNo">538</span>      msgBuffer.append(' ');<a name="line.538"></a>
+<span class="sourceLineNo">539</span><a name="line.539"></a>
+<span class="sourceLineNo">540</span>      final String name = argPair.getFirst();<a name="line.540"></a>
+<span class="sourceLineNo">541</span>      if (name.startsWith("-"))<a name="line.541"></a>
+<span class="sourceLineNo">542</span>      {<a name="line.542"></a>
+<span class="sourceLineNo">543</span>        msgBuffer.append(name);<a name="line.543"></a>
+<span class="sourceLineNo">544</span>      }<a name="line.544"></a>
+<span class="sourceLineNo">545</span>      else<a name="line.545"></a>
+<span class="sourceLineNo">546</span>      {<a name="line.546"></a>
+<span class="sourceLineNo">547</span>        msgBuffer.append(StaticUtils.cleanExampleCommandLineArgument(name));<a name="line.547"></a>
+<span class="sourceLineNo">548</span>      }<a name="line.548"></a>
+<span class="sourceLineNo">549</span><a name="line.549"></a>
+<span class="sourceLineNo">550</span>      final String value = argPair.getSecond();<a name="line.550"></a>
+<span class="sourceLineNo">551</span>      if (value != null)<a name="line.551"></a>
+<span class="sourceLineNo">552</span>      {<a name="line.552"></a>
+<span class="sourceLineNo">553</span>        msgBuffer.append(' ');<a name="line.553"></a>
+<span class="sourceLineNo">554</span>        msgBuffer.append(StaticUtils.cleanExampleCommandLineArgument(value));<a name="line.554"></a>
+<span class="sourceLineNo">555</span>      }<a name="line.555"></a>
+<span class="sourceLineNo">556</span>    }<a name="line.556"></a>
+<span class="sourceLineNo">557</span>    msgBuffer.append(StaticUtils.EOL);<a name="line.557"></a>
+<span class="sourceLineNo">558</span>    msgBuffer.append(StaticUtils.EOL);<a name="line.558"></a>
+<span class="sourceLineNo">559</span><a name="line.559"></a>
+<span class="sourceLineNo">560</span>    final byte[] logMessageBytes = StaticUtils.getBytes(msgBuffer.toString());<a name="line.560"></a>
+<span class="sourceLineNo">561</span><a name="line.561"></a>
+<span class="sourceLineNo">562</span><a name="line.562"></a>
+<span class="sourceLineNo">563</span>    // Append the log message to each of the log files.<a name="line.563"></a>
+<span class="sourceLineNo">564</span>    for (final File logFile : logDetails.getLogFiles())<a name="line.564"></a>
+<span class="sourceLineNo">565</span>    {<a name="line.565"></a>
+<span class="sourceLineNo">566</span>      logMessageToFile(logMessageBytes, logFile,<a name="line.566"></a>
+<span class="sourceLineNo">567</span>           logDetails.getToolErrorStream());<a name="line.567"></a>
+<span class="sourceLineNo">568</span>    }<a name="line.568"></a>
+<span class="sourceLineNo">569</span>  }<a name="line.569"></a>
+<span class="sourceLineNo">570</span><a name="line.570"></a>
+<span class="sourceLineNo">571</span><a name="line.571"></a>
+<span class="sourceLineNo">572</span><a name="line.572"></a>
+<span class="sourceLineNo">573</span>  /**<a name="line.573"></a>
+<span class="sourceLineNo">574</span>   * Logs a message about the completion of the specified tool.  This method<a name="line.574"></a>
+<span class="sourceLineNo">575</span>   * must acquire an exclusive lock on each log file before attempting to append<a name="line.575"></a>
+<span class="sourceLineNo">576</span>   * any data to it.<a name="line.576"></a>
+<span class="sourceLineNo">577</span>   *<a name="line.577"></a>
+<span class="sourceLineNo">578</span>   * @param  logDetails   The tool invocation log details object obtained from<a name="line.578"></a>
+<span class="sourceLineNo">579</span>   *                      running the {@link #getLogMessageDetails} method.  It<a name="line.579"></a>
+<span class="sourceLineNo">580</span>   *                      must not be {@code null}.<a name="line.580"></a>
+<span class="sourceLineNo">581</span>   * @param  exitCode     An integer exit code that may be used to broadly<a name="line.581"></a>
+<span class="sourceLineNo">582</span>   *                      indicate whether the tool completed successfully.  A<a name="line.582"></a>
+<span class="sourceLineNo">583</span>   *                      value of zero typically indicates that it did<a name="line.583"></a>
+<span class="sourceLineNo">584</span>   *                      complete successfully, while a nonzero value generally<a name="line.584"></a>
+<span class="sourceLineNo">585</span>   *                      indicates that some error occurred.  This may be<a name="line.585"></a>
+<span class="sourceLineNo">586</span>   *                      {@code null} if the tool did not complete normally<a name="line.586"></a>
+<span class="sourceLineNo">587</span>   *                      (for example, because the tool processing was<a name="line.587"></a>
+<span class="sourceLineNo">588</span>   *                      interrupted by a JVM shutdown).<a name="line.588"></a>
+<span class="sourceLineNo">589</span>   * @param  exitMessage  An optional message that provides information about<a name="line.589"></a>
+<span class="sourceLineNo">590</span>   *                      the completion of the tool processing.  It may be<a name="line.590"></a>
+<span class="sourceLineNo">591</span>   *                      {@code null} if no such message is available.<a name="line.591"></a>
+<span class="sourceLineNo">592</span>   */<a name="line.592"></a>
+<span class="sourceLineNo">593</span>  public static void logCompletionMessage(<a name="line.593"></a>
+<span class="sourceLineNo">594</span>                          final ToolInvocationLogDetails logDetails,<a name="line.594"></a>
+<span class="sourceLineNo">595</span>                          final Integer exitCode, final String exitMessage)<a name="line.595"></a>
+<span class="sourceLineNo">596</span>  {<a name="line.596"></a>
+<span class="sourceLineNo">597</span>    // Build the log message.<a name="line.597"></a>
+<span class="sourceLineNo">598</span>    final StringBuilder msgBuffer = new StringBuilder();<a name="line.598"></a>
+<span class="sourceLineNo">599</span>    final SimpleDateFormat dateFormat =<a name="line.599"></a>
+<span class="sourceLineNo">600</span>         new SimpleDateFormat(LOG_MESSAGE_DATE_FORMAT);<a name="line.600"></a>
+<span class="sourceLineNo">601</span><a name="line.601"></a>
+<span class="sourceLineNo">602</span>    msgBuffer.append("# [");<a name="line.602"></a>
+<span class="sourceLineNo">603</span>    msgBuffer.append(dateFormat.format(new Date()));<a name="line.603"></a>
+<span class="sourceLineNo">604</span>    msgBuffer.append(']');<a name="line.604"></a>
+<span class="sourceLineNo">605</span>    msgBuffer.append(StaticUtils.EOL);<a name="line.605"></a>
+<span class="sourceLineNo">606</span>    msgBuffer.append("# Command Name: ");<a name="line.606"></a>
+<span class="sourceLineNo">607</span>    msgBuffer.append(logDetails.getCommandName());<a name="line.607"></a>
+<span class="sourceLineNo">608</span>    msgBuffer.append(StaticUtils.EOL);<a name="line.608"></a>
+<span class="sourceLineNo">609</span>    msgBuffer.append("# Invocation ID: ");<a name="line.609"></a>
+<span class="sourceLineNo">610</span>    msgBuffer.append(logDetails.getInvocationID());<a name="line.610"></a>
+<span class="sourceLineNo">611</span>    msgBuffer.append(StaticUtils.EOL);<a name="line.611"></a>
+<span class="sourceLineNo">612</span><a name="line.612"></a>
+<span class="sourceLineNo">613</span>    if (exitCode != null)<a name="line.613"></a>
+<span class="sourceLineNo">614</span>    {<a name="line.614"></a>
+<span class="sourceLineNo">615</span>      msgBuffer.append("# Exit Code: ");<a name="line.615"></a>
+<span class="sourceLineNo">616</span>      msgBuffer.append(exitCode);<a name="line.616"></a>
+<span class="sourceLineNo">617</span>      msgBuffer.append(StaticUtils.EOL);<a name="line.617"></a>
+<span class="sourceLineNo">618</span>    }<a name="line.618"></a>
+<span class="sourceLineNo">619</span><a name="line.619"></a>
+<span class="sourceLineNo">620</span>    if (exitMessage != null)<a name="line.620"></a>
+<span class="sourceLineNo">621</span>    {<a name="line.621"></a>
+<span class="sourceLineNo">622</span>      msgBuffer.append("# Exit Message: ");<a name="line.622"></a>
+<span class="sourceLineNo">623</span>      cleanMessage(exitMessage, msgBuffer);<a name="line.623"></a>
+<span class="sourceLineNo">624</span>      msgBuffer.append(StaticUtils.EOL);<a name="line.624"></a>
+<span class="sourceLineNo">625</span>    }<a name="line.625"></a>
+<span class="sourceLineNo">626</span><a name="line.626"></a>
+<span class="sourceLineNo">627</span>    msgBuffer.append(StaticUtils.EOL);<a name="line.627"></a>
+<span class="sourceLineNo">628</span><a name="line.628"></a>
+<span class="sourceLineNo">629</span>    final byte[] logMessageBytes = StaticUtils.getBytes(msgBuffer.toString());<a name="line.629"></a>
+<span class="sourceLineNo">630</span><a name="line.630"></a>
+<span class="sourceLineNo">631</span><a name="line.631"></a>
+<span class="sourceLineNo">632</span>    // Append the log message to each of the log files.<a name="line.632"></a>
+<span class="sourceLineNo">633</span>    for (final File logFile : logDetails.getLogFiles())<a name="line.633"></a>
+<span class="sourceLineNo">634</span>    {<a name="line.634"></a>
+<span class="sourceLineNo">635</span>      logMessageToFile(logMessageBytes, logFile,<a name="line.635"></a>
+<span class="sourceLineNo">636</span>           logDetails.getToolErrorStream());<a name="line.636"></a>
+<span class="sourceLineNo">637</span>    }<a name="line.637"></a>
+<span class="sourceLineNo">638</span>  }<a name="line.638"></a>
+<span class="sourceLineNo">639</span><a name="line.639"></a>
+<span class="sourceLineNo">640</span><a name="line.640"></a>
+<span class="sourceLineNo">641</span><a name="line.641"></a>
+<span class="sourceLineNo">642</span>  /**<a name="line.642"></a>
+<span class="sourceLineNo">643</span>   * Writes a clean representation of the provided message to the given buffer.<a name="line.643"></a>
+<span class="sourceLineNo">644</span>   * All ASCII characters from the space to the tilde will be preserved.  All<a name="line.644"></a>
+<span class="sourceLineNo">645</span>   * other characters will use the hexadecimal representation of the bytes that<a name="line.645"></a>
+<span class="sourceLineNo">646</span>   * make up that character, with each pair of hexadecimal digits escaped with a<a name="line.646"></a>
+<span class="sourceLineNo">647</span>   * backslash.<a name="line.647"></a>
+<span class="sourceLineNo">648</span>   *<a name="line.648"></a>
+<span class="sourceLineNo">649</span>   * @param  message  The message to be cleaned.<a name="line.649"></a>
+<span class="sourceLineNo">650</span>   * @param  buffer   The buffer to which the message should be appended.<a name="line.650"></a>
+<span class="sourceLineNo">651</span>   */<a name="line.651"></a>
+<span class="sourceLineNo">652</span>  private static void cleanMessage(final String message,<a name="line.652"></a>
+<span class="sourceLineNo">653</span>                                   final StringBuilder buffer)<a name="line.653"></a>
+<span class="sourceLineNo">654</span>  {<a name="line.654"></a>
+<span class="sourceLineNo">655</span>    for (final char c : message.toCharArray())<a name="line.655"></a>
+<span class="sourceLineNo">656</span>    {<a name="line.656"></a>
+<span class="sourceLineNo">657</span>      if ((c &gt;= ' ') &amp;&amp; (c &lt;= '~'))<a name="line.657"></a>
+<span class="sourceLineNo">658</span>      {<a name="line.658"></a>
+<span class="sourceLineNo">659</span>        buffer.append(c);<a name="line.659"></a>
+<span class="sourceLineNo">660</span>      }<a name="line.660"></a>
+<span class="sourceLineNo">661</span>      else<a name="line.661"></a>
+<span class="sourceLineNo">662</span>      {<a name="line.662"></a>
+<span class="sourceLineNo">663</span>        for (final byte b : StaticUtils.getBytes(Character.toString(c)))<a name="line.663"></a>
+<span class="sourceLineNo">664</span>        {<a name="line.664"></a>
+<span class="sourceLineNo">665</span>          buffer.append('\\');<a name="line.665"></a>
+<span class="sourceLineNo">666</span>          StaticUtils.toHex(b, buffer);<a name="line.666"></a>
+<span class="sourceLineNo">667</span>        }<a name="line.667"></a>
+<span class="sourceLineNo">668</span>      }<a name="line.668"></a>
+<span class="sourceLineNo">669</span>    }<a name="line.669"></a>
+<span class="sourceLineNo">670</span>  }<a name="line.670"></a>
+<span class="sourceLineNo">671</span><a name="line.671"></a>
+<span class="sourceLineNo">672</span><a name="line.672"></a>
+<span class="sourceLineNo">673</span><a name="line.673"></a>
+<span class="sourceLineNo">674</span>  /**<a name="line.674"></a>
+<span class="sourceLineNo">675</span>   * Acquires an exclusive lock on the specified log file and appends the<a name="line.675"></a>
+<span class="sourceLineNo">676</span>   * provided log message to it.<a name="line.676"></a>
+<span class="sourceLineNo">677</span>   *<a name="line.677"></a>
+<span class="sourceLineNo">678</span>   * @param  logMessageBytes  The bytes that comprise the log message to be<a name="line.678"></a>
+<span class="sourceLineNo">679</span>   *                          appended to the log file.<a name="line.679"></a>
+<span class="sourceLineNo">680</span>   * @param  logFile          The log file to be locked and updated.<a name="line.680"></a>
+<span class="sourceLineNo">681</span>   * @param  toolErrorStream  A print stream that may be used to report<a name="line.681"></a>
+<span class="sourceLineNo">682</span>   *                          information about any problems encountered while<a name="line.682"></a>
+<span class="sourceLineNo">683</span>   *                          attempting to perform invocation logging.  It<a name="line.683"></a>
+<span class="sourceLineNo">684</span>   *                          must not be {@code null}.<a name="line.684"></a>
+<span class="sourceLineNo">685</span>   */<a name="line.685"></a>
+<span class="sourceLineNo">686</span>  private static void logMessageToFile(final byte[] logMessageBytes,<a name="line.686"></a>
+<span class="sourceLineNo">687</span>                                       final File logFile,<a name="line.687"></a>
+<span class="sourceLineNo">688</span>                                       final PrintStream toolErrorStream)<a name="line.688"></a>
+<span class="sourceLineNo">689</span>  {<a name="line.689"></a>
+<span class="sourceLineNo">690</span>    // Open a file channel for the target log file.<a name="line.690"></a>
+<span class="sourceLineNo">691</span>    final Set&lt;StandardOpenOption&gt; openOptionsSet = EnumSet.of(<a name="line.691"></a>
+<span class="sourceLineNo">692</span>            StandardOpenOption.CREATE, // Create the file if it doesn't exist.<a name="line.692"></a>
+<span class="sourceLineNo">693</span>            StandardOpenOption.APPEND, // Append to file if it already exists.<a name="line.693"></a>
+<span class="sourceLineNo">694</span>            StandardOpenOption.DSYNC); // Synchronously flush file on writing.<a name="line.694"></a>
+<span class="sourceLineNo">695</span><a name="line.695"></a>
+<span class="sourceLineNo">696</span>    final Set&lt;PosixFilePermission&gt; filePermissionsSet = EnumSet.of(<a name="line.696"></a>
+<span class="sourceLineNo">697</span>            PosixFilePermission.OWNER_READ,   // Grant owner read access.<a name="line.697"></a>
+<span class="sourceLineNo">698</span>            PosixFilePermission.OWNER_WRITE); // Grant owner write access.<a name="line.698"></a>
+<span class="sourceLineNo">699</span><a name="line.699"></a>
+<span class="sourceLineNo">700</span>    final FileAttribute&lt;Set&lt;PosixFilePermission&gt;&gt; filePermissionsAttribute=<a name="line.700"></a>
+<span class="sourceLineNo">701</span>            PosixFilePermissions.asFileAttribute(filePermissionsSet);<a name="line.701"></a>
+<span class="sourceLineNo">702</span><a name="line.702"></a>
+<span class="sourceLineNo">703</span>    try (FileChannel fileChannel =<a name="line.703"></a>
+<span class="sourceLineNo">704</span>              FileChannel.open(logFile.toPath(), openOptionsSet,<a name="line.704"></a>
+<span class="sourceLineNo">705</span>                   filePermissionsAttribute))<a name="line.705"></a>
+<span class="sourceLineNo">706</span>    {<a name="line.706"></a>
+<span class="sourceLineNo">707</span>      try (FileLock fileLock =<a name="line.707"></a>
+<span class="sourceLineNo">708</span>                acquireFileLock(fileChannel, logFile, toolErrorStream))<a name="line.708"></a>
+<span class="sourceLineNo">709</span>      {<a name="line.709"></a>
+<span class="sourceLineNo">710</span>        if (fileLock != null)<a name="line.710"></a>
+<span class="sourceLineNo">711</span>        {<a name="line.711"></a>
+<span class="sourceLineNo">712</span>          try<a name="line.712"></a>
+<span class="sourceLineNo">713</span>          {<a name="line.713"></a>
+<span class="sourceLineNo">714</span>            fileChannel.write(ByteBuffer.wrap(logMessageBytes));<a name="line.714"></a>
+<span class="sourceLineNo">715</span>          }<a name="line.715"></a>
+<span class="sourceLineNo">716</span>          catch (final Exception e)<a name="line.716"></a>
+<span class="sourceLineNo">717</span>          {<a name="line.717"></a>
+<span class="sourceLineNo">718</span>            Debug.debugException(e);<a name="line.718"></a>
+<span class="sourceLineNo">719</span>            printError(<a name="line.719"></a>
+<span class="sourceLineNo">720</span>                 ERR_TOOL_LOGGER_ERROR_WRITING_LOG_MESSAGE.get(<a name="line.720"></a>
+<span class="sourceLineNo">721</span>                      logFile.getAbsolutePath(),<a name="line.721"></a>
+<span class="sourceLineNo">722</span>                      StaticUtils.getExceptionMessage(e)),<a name="line.722"></a>
+<span class="sourceLineNo">723</span>                 toolErrorStream);<a name="line.723"></a>
+<span class="sourceLineNo">724</span>          }<a name="line.724"></a>
+<span class="sourceLineNo">725</span>        }<a name="line.725"></a>
+<span class="sourceLineNo">726</span>      }<a name="line.726"></a>
+<span class="sourceLineNo">727</span>    }<a name="line.727"></a>
+<span class="sourceLineNo">728</span>    catch (final Exception e)<a name="line.728"></a>
+<span class="sourceLineNo">729</span>    {<a name="line.729"></a>
+<span class="sourceLineNo">730</span>      Debug.debugException(e);<a name="line.730"></a>
+<span class="sourceLineNo">731</span>      printError(<a name="line.731"></a>
+<span class="sourceLineNo">732</span>           ERR_TOOL_LOGGER_ERROR_OPENING_LOG_FILE.get(logFile.getAbsolutePath(),<a name="line.732"></a>
+<span class="sourceLineNo">733</span>                StaticUtils.getExceptionMessage(e)),<a name="line.733"></a>
+<span class="sourceLineNo">734</span>           toolErrorStream);<a name="line.734"></a>
+<span class="sourceLineNo">735</span>    }<a name="line.735"></a>
+<span class="sourceLineNo">736</span>  }<a name="line.736"></a>
+<span class="sourceLineNo">737</span><a name="line.737"></a>
+<span class="sourceLineNo">738</span><a name="line.738"></a>
+<span class="sourceLineNo">739</span><a name="line.739"></a>
+<span class="sourceLineNo">740</span>  /**<a name="line.740"></a>
+<span class="sourceLineNo">741</span>   * Attempts to acquire an exclusive file lock on the provided file channel.<a name="line.741"></a>
+<span class="sourceLineNo">742</span>   *<a name="line.742"></a>
+<span class="sourceLineNo">743</span>   * @param  fileChannel      The file channel on which to acquire the file<a name="line.743"></a>
+<span class="sourceLineNo">744</span>   *                          lock.<a name="line.744"></a>
+<span class="sourceLineNo">745</span>   * @param  logFile          The path to the log file being locked.<a name="line.745"></a>
+<span class="sourceLineNo">746</span>   * @param  toolErrorStream  A print stream that may be used to report<a name="line.746"></a>
+<span class="sourceLineNo">747</span>   *                          information about any problems encountered while<a name="line.747"></a>
+<span class="sourceLineNo">748</span>   *                          attempting to perform invocation logging.  It<a name="line.748"></a>
+<span class="sourceLineNo">749</span>   *                          must not be {@code null}.<a name="line.749"></a>
+<span class="sourceLineNo">750</span>   *<a name="line.750"></a>
+<span class="sourceLineNo">751</span>   * @return  The file lock that was acquired, or {@code null} if the lock could<a name="line.751"></a>
+<span class="sourceLineNo">752</span>   *          not be acquired.<a name="line.752"></a>
+<span class="sourceLineNo">753</span>   */<a name="line.753"></a>
+<span class="sourceLineNo">754</span>  private static FileLock acquireFileLock(final FileChannel fileChannel,<a name="line.754"></a>
+<span class="sourceLineNo">755</span>                                          final File logFile,<a name="line.755"></a>
+<span class="sourceLineNo">756</span>                                          final PrintStream toolErrorStream)<a name="line.756"></a>
+<span class="sourceLineNo">757</span>  {<a name="line.757"></a>
+<span class="sourceLineNo">758</span>    try<a name="line.758"></a>
+<span class="sourceLineNo">759</span>    {<a name="line.759"></a>
+<span class="sourceLineNo">760</span>      final FileLock fileLock = fileChannel.tryLock();<a name="line.760"></a>
+<span class="sourceLineNo">761</span>      if (fileLock != null)<a name="line.761"></a>
+<span class="sourceLineNo">762</span>      {<a name="line.762"></a>
+<span class="sourceLineNo">763</span>        return fileLock;<a name="line.763"></a>
+<span class="sourceLineNo">764</span>      }<a name="line.764"></a>
+<span class="sourceLineNo">765</span>    }<a name="line.765"></a>
+<span class="sourceLineNo">766</span>    catch (final Exception e)<a name="line.766"></a>
+<span class="sourceLineNo">767</span>    {<a name="line.767"></a>
+<span class="sourceLineNo">768</span>      Debug.debugException(e);<a name="line.768"></a>
+<span class="sourceLineNo">769</span>    }<a name="line.769"></a>
+<span class="sourceLineNo">770</span><a name="line.770"></a>
+<span class="sourceLineNo">771</span>    int numAttempts = 1;<a name="line.771"></a>
+<span class="sourceLineNo">772</span>    final long stopWaitingTime = System.currentTimeMillis() + 1000L;<a name="line.772"></a>
+<span class="sourceLineNo">773</span>    while (System.currentTimeMillis() &lt;= stopWaitingTime)<a name="line.773"></a>
+<span class="sourceLineNo">774</span>    {<a name="line.774"></a>
+<span class="sourceLineNo">775</span>      try<a name="line.775"></a>
+<span class="sourceLineNo">776</span>      {<a name="line.776"></a>
+<span class="sourceLineNo">777</span>        Thread.sleep(10L);<a name="line.777"></a>
+<span class="sourceLineNo">778</span>        final FileLock fileLock = fileChannel.tryLock();<a name="line.778"></a>
+<span class="sourceLineNo">779</span>        if (fileLock != null)<a name="line.779"></a>
+<span class="sourceLineNo">780</span>        {<a name="line.780"></a>
+<span class="sourceLineNo">781</span>          return fileLock;<a name="line.781"></a>
+<span class="sourceLineNo">782</span>        }<a name="line.782"></a>
+<span class="sourceLineNo">783</span>      }<a name="line.783"></a>
+<span class="sourceLineNo">784</span>      catch (final Exception e)<a name="line.784"></a>
+<span class="sourceLineNo">785</span>      {<a name="line.785"></a>
+<span class="sourceLineNo">786</span>        Debug.debugException(e);<a name="line.786"></a>
+<span class="sourceLineNo">787</span>      }<a name="line.787"></a>
+<span class="sourceLineNo">788</span><a name="line.788"></a>
+<span class="sourceLineNo">789</span>      numAttempts++;<a name="line.789"></a>
+<span class="sourceLineNo">790</span>    }<a name="line.790"></a>
+<span class="sourceLineNo">791</span><a name="line.791"></a>
+<span class="sourceLineNo">792</span>    printError(<a name="line.792"></a>
+<span class="sourceLineNo">793</span>         ERR_TOOL_LOGGER_UNABLE_TO_ACQUIRE_FILE_LOCK.get(<a name="line.793"></a>
+<span class="sourceLineNo">794</span>              logFile.getAbsolutePath(), numAttempts),<a name="line.794"></a>
+<span class="sourceLineNo">795</span>         toolErrorStream);<a name="line.795"></a>
+<span class="sourceLineNo">796</span>    return null;<a name="line.796"></a>
+<span class="sourceLineNo">797</span>  }<a name="line.797"></a>
+<span class="sourceLineNo">798</span><a name="line.798"></a>
+<span class="sourceLineNo">799</span><a name="line.799"></a>
+<span class="sourceLineNo">800</span><a name="line.800"></a>
+<span class="sourceLineNo">801</span>  /**<a name="line.801"></a>
+<span class="sourceLineNo">802</span>   * Prints the provided message using the tool output stream.  The message will<a name="line.802"></a>
+<span class="sourceLineNo">803</span>   * be wrapped across multiple lines if necessary, and each line will be<a name="line.803"></a>
+<span class="sourceLineNo">804</span>   * prefixed with the octothorpe character (#) so that it is likely to be<a name="line.804"></a>
+<span class="sourceLineNo">805</span>   * interpreted as a comment by anything that tries to parse the tool output.<a name="line.805"></a>
+<span class="sourceLineNo">806</span>   *<a name="line.806"></a>
+<span class="sourceLineNo">807</span>   * @param  message          The message to be written.<a name="line.807"></a>
+<span class="sourceLineNo">808</span>   * @param  toolErrorStream  The print stream that should be used to write the<a name="line.808"></a>
+<span class="sourceLineNo">809</span>   *                          message.<a name="line.809"></a>
+<span class="sourceLineNo">810</span>   */<a name="line.810"></a>
+<span class="sourceLineNo">811</span>  private static void printError(final String message,<a name="line.811"></a>
+<span class="sourceLineNo">812</span>                                 final PrintStream toolErrorStream)<a name="line.812"></a>
+<span class="sourceLineNo">813</span>  {<a name="line.813"></a>
+<span class="sourceLineNo">814</span>    toolErrorStream.println();<a name="line.814"></a>
+<span class="sourceLineNo">815</span><a name="line.815"></a>
+<span class="sourceLineNo">816</span>    final int maxWidth = StaticUtils.TERMINAL_WIDTH_COLUMNS - 3;<a name="line.816"></a>
+<span class="sourceLineNo">817</span>    for (final String line : StaticUtils.wrapLine(message, maxWidth))<a name="line.817"></a>
+<span class="sourceLineNo">818</span>    {<a name="line.818"></a>
+<span class="sourceLineNo">819</span>      toolErrorStream.println("# " + line);<a name="line.819"></a>
+<span class="sourceLineNo">820</span>    }<a name="line.820"></a>
+<span class="sourceLineNo">821</span>  }<a name="line.821"></a>
+<span class="sourceLineNo">822</span>}<a name="line.822"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>
