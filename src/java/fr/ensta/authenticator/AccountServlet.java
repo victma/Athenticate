@@ -13,6 +13,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  *
@@ -34,9 +35,29 @@ public class AccountServlet extends HttpServlet {
             RequestDispatcher dispatcher;
             ServletContext context = getServletContext();
             
-            request.setAttribute("firstname", "Toto");
+            HttpSession session = request.getSession(false);
             
-            dispatcher = context.getNamedDispatcher("accountInfo");
+            if (session == null) {
+                response.sendRedirect(context.getContextPath() + "/login");
+                return;
+            }
+            
+            String path = request.getPathInfo();
+            request.setAttribute("path", path);
+            
+            if ("/edit".equals(path)) {
+                dispatcher = context.getNamedDispatcher("accountEdit");
+            } else if (path == null || "/".equals(path)) {
+                dispatcher = context.getNamedDispatcher("accountInfo");
+            } else {
+                response.sendError(404);
+                return;
+            }
+            
+            request.setAttribute("email", session.getAttribute("uname"));
+            request.setAttribute("firstname", "Donald");
+            request.setAttribute("lastname", "Duck");
+            
             dispatcher.forward(request, response);
         } catch (Exception e) {
             log("Exception dans AccountServlet.doGet()", e);

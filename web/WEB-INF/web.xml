@@ -8,16 +8,22 @@
         <servlet-name>LoginServlet</servlet-name>
         <servlet-class>fr.ensta.authenticator.LoginServlet</servlet-class>
     </servlet>
-    
+    <servlet>
+        <servlet-name>LogoutServlet</servlet-name>
+        <servlet-class>fr.ensta.authenticator.LogoutServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>AccountServlet</servlet-name>
-        <url-pattern>/account</url-pattern>
+        <url-pattern>/account/*</url-pattern>
     </servlet-mapping>
     <servlet>
         <servlet-name>accountInfo</servlet-name>
         <jsp-file>/AccountInfo.jsp</jsp-file>
     </servlet>
-    
+    <servlet>
+        <servlet-name>accountEdit</servlet-name>
+        <jsp-file>/AccountEdit.jsp</jsp-file>
+    </servlet>
     <servlet-mapping>
         <servlet-name>LoginServlet</servlet-name>
         <url-pattern>/login</url-pattern>
@@ -27,6 +33,10 @@
         <jsp-file>/Login.jsp</jsp-file>
     </servlet>
     
+    <servlet-mapping>
+        <servlet-name>LogoutServlet</servlet-name>
+        <url-pattern>/logout</url-pattern>
+    </servlet-mapping>
     <session-config>
         <session-timeout>
             30

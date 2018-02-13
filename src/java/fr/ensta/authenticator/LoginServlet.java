@@ -19,6 +19,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  *
@@ -40,12 +41,12 @@ public class LoginServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
+            RequestDispatcher dispatcher;
+            ServletContext context = getServletContext();
+            
             if (request.getAttribute("error") == null) {
                 request.setAttribute("error", false);
             }
-            
-            RequestDispatcher dispatcher;
-            ServletContext context = getServletContext();
                         
             dispatcher = context.getNamedDispatcher("loginForm");
             dispatcher.forward(request, response);
@@ -65,7 +66,9 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        try (PrintWriter out = response.getWriter()) {
+        try {
+            ServletContext context = getServletContext();
+            
             List<String> params;
             params = request.getReader().lines().collect(Collectors.toList());
             Map<String, String> credentials = new HashMap();
@@ -83,21 +86,26 @@ public class LoginServlet extends HttpServlet {
                 }
             }
             
-            if (credentials.size() != 2) {
+            if (credentials.size() != 2
+                    || credentials.get("uname").isEmpty()
+                    || credentials.get("password").isEmpty()) {
                 request.setAttribute("error", true);
                 this.doGet(request, response);
+                return;
             }
             
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Not implemented</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>POST request</h1><p>");
-            out.println(credentials);
-            out.println("</p></body>");
-            out.println("</html>");
+            // Check credentials in LDAP
+            if (!"password".equals(credentials.get("password"))) {
+                request.setAttribute("error", true);
+                this.doGet(request, response);
+                return;
+            }
+            
+            HttpSession session = request.getSession();
+            
+            session.setAttribute("uname", credentials.get("uname"));
+            
+            response.sendRedirect(context.getContextPath() + "/account");
         } catch (Exception e) {
             log("Exception dans AccountServlet.doPost()", e);
         }

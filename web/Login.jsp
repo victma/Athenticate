@@ -28,8 +28,8 @@
         </style>
     </head>
     <body>
-        <form action="login" method="post" enctype="text/plain">
-            <input type="text" placeholder="Username" name="uname" required><br />
+        <form action="<%=application.getContextPath()%>/login" method="post" enctype="text/plain">
+            <input type="email" placeholder="Email address" name="uname" required><br />
             <input type="password" placeholder="Password" name="password" required><br />
             <a href="#">Forgot password?</a><br />
             
