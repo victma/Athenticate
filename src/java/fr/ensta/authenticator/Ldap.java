@@ -9,7 +9,9 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPResult;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
+import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
+import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
 /**
@@ -17,8 +19,10 @@ import com.unboundid.ldap.sdk.SimpleBindRequest;
  * @author eleve
  */
 public class Ldap {
-
-    public static LDAPConnection authenticate(String username, String password) throws LDAPException {
+    String userid;
+    LDAPConnection ldap;
+    
+    public boolean authenticate(String username, String password) throws LDAPException {
         LDAPConnection ldap = null;
         ldap = new LDAPConnection("localhost.localdomain", 1389);
 
@@ -26,16 +30,18 @@ public class Ldap {
 
         if (sr.getEntryCount() == 0) {
             System.out.println("KO");
+            return false;
         } else {
             String dn = sr.getSearchEntries().get(0).getDN();
             ldap = new LDAPConnection("localhost.localdomain", 1389, dn, password);
             System.out.print("connected \n");
+            userid = username;
+            this.ldap = ldap;
+            return true;
         }
-        
-        return ldap;
     }
     
-    public static int update(LDAPConnection ldap, String attribute, String value){
+    public int update(String attribute, String value){
         Modification mod = new Modification(ModificationType.REPLACE, attribute, value); 
         
         SimpleBindRequest request = (SimpleBindRequest)ldap.getLastBindRequest();
@@ -50,5 +56,25 @@ public class Ldap {
         }
       
       return 0;
+    }
+    public String getAttribute(String attribute) throws LDAPException
+    {
+        SearchRequest sr = new SearchRequest("ou=People,dc=ensta,dc=fr", SearchScope.SUB, "(uid="+userid+")", attribute);
+      
+        SearchResult searchResult;
+      
+        searchResult = ldap.search(sr);
+        SearchResultEntry entry = searchResult.getSearchEntries().get(0);
+        String retAttribute = entry.getAttributeValue(attribute);
+        return retAttribute;
+    }
+    
+    public static void main(String[ ] args) throws LDAPException
+    {
+        Ldap ldap = new Ldap();
+        ldap.authenticate("vmalet", "malet");
+        String mail = ldap.getAttribute("securityquestion");
+        System.out.print(mail);
+        ldap.update("securityquestion", "Nom de la mère de mouss ?");
     }
 }
