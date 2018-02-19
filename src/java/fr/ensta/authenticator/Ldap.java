@@ -9,6 +9,7 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPResult;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
+import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
@@ -19,10 +20,14 @@ import com.unboundid.ldap.sdk.SimpleBindRequest;
  * @author eleve
  */
 public class Ldap {
-    String userid;
-    LDAPConnection ldap;
+    private String userid;
+    private LDAPConnection ldap;
     
-    public boolean authenticate(String username, String password) throws LDAPException {
+    public String getUid() {
+        return this.userid;
+    }
+    
+    public void authenticate(String username, String password) throws LDAPException {
         LDAPConnection ldap = null;
         ldap = new LDAPConnection("localhost.localdomain", 1389);
 
@@ -30,14 +35,13 @@ public class Ldap {
 
         if (sr.getEntryCount() == 0) {
             System.out.println("KO");
-            return false;
+            throw new LDAPException(ResultCode.OPERATIONS_ERROR);
         } else {
             String dn = sr.getSearchEntries().get(0).getDN();
             ldap = new LDAPConnection("localhost.localdomain", 1389, dn, password);
             System.out.print("connected \n");
             userid = username;
             this.ldap = ldap;
-            return true;
         }
     }
     

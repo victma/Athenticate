@@ -42,6 +42,10 @@
                 <th>Email address</th>
                 <td><%=request.getAttribute("email")%></td>
             </tr>
+            <tr>
+                <th>Security Question</th>
+                <td><%=request.getAttribute("question")%></td>
+            </tr>
         </table>
         <p>
             <a href="<%=application.getContextPath()%>/account/edit">Edit Profile</a>    

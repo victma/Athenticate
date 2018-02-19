@@ -31,13 +31,6 @@ public class LoginServlet extends HttpServlet {
     static Pattern unamePattern = Pattern.compile("^uname=(.+)$");
     static Pattern pwdPattern = Pattern.compile("^password=(.+)$");
     
-    private Ldap ldap;
-    
-    public LoginServlet() {
-        super();
-        this.ldap = new Ldap();
-    }
-    
     /**
      * Handles the HTTP <code>GET</code> method.
      *
@@ -104,10 +97,11 @@ public class LoginServlet extends HttpServlet {
             
             // Check credentials in LDAP
             try {
-                LDAPConnection connection = this.ldap.authenticate(credentials.get("uname"), credentials.get("password"));
+                Ldap ldap = new Ldap();
+                ldap.authenticate(credentials.get("uname"), credentials.get("password"));
                 
                 HttpSession session = request.getSession();
-                session.setAttribute("ldapConnection", connection);
+                session.setAttribute("ldap", ldap);
             } catch (LDAPException e) {
                 request.setAttribute("error", true);
                 this.doGet(request, response);

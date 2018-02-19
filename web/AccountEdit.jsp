@@ -48,6 +48,10 @@
                 <label>Email Address:</label> 
                 <input type="email" name="email" placeholder="<%=request.getAttribute("email")%>"><br />
             </div>
+            <div class="info">
+                <label>Secret Question:</label> 
+                <input type="text" name="question" placeholder="<%=request.getAttribute("question")%>"><br />
+            </div>
             
             <input type="submit" value="Update">
         </form>
