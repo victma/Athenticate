@@ -5,6 +5,8 @@
  */
 package fr.ensta.authenticator;
 
+import com.unboundid.ldap.sdk.LDAPConnection;
+import com.unboundid.ldap.sdk.LDAPException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -28,6 +30,13 @@ import javax.servlet.http.HttpSession;
 public class LoginServlet extends HttpServlet {
     static Pattern unamePattern = Pattern.compile("^uname=(.+)$");
     static Pattern pwdPattern = Pattern.compile("^password=(.+)$");
+    
+    private Ldap ldap;
+    
+    public LoginServlet() {
+        super();
+        this.ldap = new Ldap();
+    }
     
     /**
      * Handles the HTTP <code>GET</code> method.
@@ -64,8 +73,7 @@ public class LoginServlet extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) {
         try {
             ServletContext context = getServletContext();
             
@@ -95,15 +103,16 @@ public class LoginServlet extends HttpServlet {
             }
             
             // Check credentials in LDAP
-            if (!"password".equals(credentials.get("password"))) {
+            try {
+                LDAPConnection connection = this.ldap.authenticate(credentials.get("uname"), credentials.get("password"));
+                
+                HttpSession session = request.getSession();
+                session.setAttribute("ldapConnection", connection);
+            } catch (LDAPException e) {
                 request.setAttribute("error", true);
                 this.doGet(request, response);
                 return;
             }
-            
-            HttpSession session = request.getSession();
-            
-            session.setAttribute("uname", credentials.get("uname"));
             
             response.sendRedirect(context.getContextPath() + "/account");
         } catch (Exception e) {

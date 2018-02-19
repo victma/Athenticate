@@ -7,6 +7,7 @@ package fr.ensta.authenticator;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.regex.Pattern;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -19,7 +20,17 @@ import javax.servlet.http.HttpSession;
  *
  * @author eleve
  */
-public class AccountServlet extends HttpServlet {
+public class AccountServlet extends HttpServlet {    
+    static Pattern firstnamePattern = Pattern.compile("^firstname=(.+)$");
+    static Pattern lastnamePattern = Pattern.compile("^lastname=(.+)$");
+    
+    private Ldap ldap;
+    
+    public AccountServlet() {
+        super();
+        this.ldap = new Ldap();
+    }
+    
     /**
      * Handles the HTTP <code>GET</code> method.
      *
@@ -54,7 +65,8 @@ public class AccountServlet extends HttpServlet {
                 return;
             }
             
-            request.setAttribute("email", session.getAttribute("uname"));
+            request.setAttribute("uname", "victma");
+            request.setAttribute("email", "d.duck@disney.com");
             request.setAttribute("firstname", "Donald");
             request.setAttribute("lastname", "Duck");
             
@@ -75,17 +87,19 @@ public class AccountServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        try (PrintWriter out = response.getWriter()) {
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Not implemented</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>POST requests not implemented (yet)</h1>");
-            out.println("</body>");
-            out.println("</html>");
+        RequestDispatcher dispatcher;
+        ServletContext context = getServletContext();
+            
+        HttpSession session = request.getSession(false);
+            
+        if (session == null) {
+            response.sendRedirect(context.getContextPath() + "/login");
+            return;
         }
+        
+        if (credentials.get("uname").isEmpty())
+        
+          
     }
 
     /**

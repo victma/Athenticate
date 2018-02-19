@@ -27,6 +27,10 @@
                
         <table>
             <tr>
+                <th>User ID</th>
+                <td><%=request.getAttribute("uname")%></td>
+            </tr>
+            <tr>
                 <th>First Name</th>
                 <td><%=request.getAttribute("firstname")%></td>
             </tr>
