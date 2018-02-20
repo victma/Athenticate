@@ -89,22 +89,6 @@ public class LostCredentialsServlet extends HttpServlet {
             dispatcher = context.getNamedDispatcher("lostcredentialsPage2");
             dispatcher.forward(request, response);
         }
-      
-        /*
-        // Check credentials in LDAP
-        try {
-            Ldap ldap = new Ldap();
-            ldap.authenticate(credentials.get("uname"), credentials.get("password"));
-
-            HttpSession session = request.getSession();
-            session.setAttribute("ldap", ldap);
-        } catch (LDAPException e) {
-            request.setAttribute("error", true);
-            this.doGet(request, response);
-            return;
-        }
-            
-            response.sendRedirect(context.getContextPath() + "/account");*/
     }
 
     /**
