@@ -12,6 +12,10 @@
         <servlet-name>LogoutServlet</servlet-name>
         <servlet-class>fr.ensta.authenticator.LogoutServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>LostCredentialsServlet</servlet-name>
+        <servlet-class>fr.ensta.authenticator.LostCredentialsServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>AccountServlet</servlet-name>
         <url-pattern>/account/*</url-pattern>
@@ -24,6 +28,10 @@
         <servlet-name>accountEdit</servlet-name>
         <jsp-file>/AccountEdit.jsp</jsp-file>
     </servlet>
+    <servlet>
+        <servlet-name>accountEditValidation</servlet-name>
+        <jsp-file>/AccountEditValidation.jsp</jsp-file>
+    </servlet>
     <servlet-mapping>
         <servlet-name>LoginServlet</servlet-name>
         <url-pattern>/login</url-pattern>
@@ -32,11 +40,22 @@
         <servlet-name>loginForm</servlet-name>
         <jsp-file>/Login.jsp</jsp-file>
     </servlet>
-    
     <servlet-mapping>
         <servlet-name>LogoutServlet</servlet-name>
         <url-pattern>/logout</url-pattern>
     </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>LostCredentialsServlet</servlet-name>
+        <url-pattern>/lostcredentials</url-pattern>
+    </servlet-mapping>
+    <servlet>
+        <servlet-name>lostcredentialsPage1</servlet-name>
+        <jsp-file>/LostCredentialsLogin.jsp</jsp-file>
+    </servlet>
+    <servlet>
+        <servlet-name>lostcredentialsPage2</servlet-name>
+        <jsp-file>/LostCredentialsQuestion.jsp</jsp-file>
+    </servlet>
     <session-config>
         <session-timeout>
             30

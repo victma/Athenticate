@@ -35,18 +35,26 @@
     </head>
      <body>
         <h1>Edit Profile</h1>
-        <form action="<%=application.getContextPath()%>/account/update" method="post" enctype="text/plain">
+        <form action="<%=application.getContextPath()%>/account/edit" method="post" enctype="text/plain">
             <div class="info">
                 <label>First Name:</label> 
-                <input type="text" name="firstname" value="<%=request.getAttribute("firstname")%>" required><br />
+                <input type="text" name="firstname" placeholder="<%=request.getAttribute("firstname")%>"><br />
             </div>
             <div class="info">
                 <label>Last Name:</label> 
-                <input type="text" name="firstname" value="<%=request.getAttribute("lastname")%>" required><br />
+                <input type="text" name="lastname" placeholder="<%=request.getAttribute("lastname")%>"><br />
             </div>
             <div class="info">
                 <label>Email Address:</label> 
-                <input type="email" name="firstname" value="<%=request.getAttribute("email")%>" required><br />
+                <input type="email" name="email" placeholder="<%=request.getAttribute("email")%>"><br />
+            </div>
+            <div class="info">
+                <label>Secret Question:</label> 
+                <input type="text" name="question" placeholder="<%=request.getAttribute("question")%>"><br />
+            </div>
+            <div class="info">
+                <label>Answer to the Secret Question:</label> 
+                <input type="text" name="answer"><br />
             </div>
             
             <input type="submit" value="Update">

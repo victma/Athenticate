@@ -5,8 +5,15 @@
  */
 package fr.ensta.authenticator;
 
+import com.unboundid.ldap.sdk.LDAPException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -20,6 +27,17 @@ import javax.servlet.http.HttpSession;
  * @author eleve
  */
 public class AccountServlet extends HttpServlet {
+    private Map<String, Pattern> info;
+    
+    public AccountServlet() {
+        super();
+        this.info = new HashMap();
+        this.info.put("givenname", Pattern.compile("^firstname=(.+)$"));
+        this.info.put("sn", Pattern.compile("^lastname=(.+)$"));
+        this.info.put("mail", Pattern.compile("^email=(.+)$"));
+        this.info.put("securityquestion", Pattern.compile("^question=(.+)$"));
+        this.info.put("securityanswer", Pattern.compile("^answer=(.+)$"));
+    }
     /**
      * Handles the HTTP <code>GET</code> method.
      *
@@ -54,9 +72,13 @@ public class AccountServlet extends HttpServlet {
                 return;
             }
             
-            request.setAttribute("email", session.getAttribute("uname"));
-            request.setAttribute("firstname", "Donald");
-            request.setAttribute("lastname", "Duck");
+            Ldap ldap = (Ldap) session.getAttribute("ldap");
+            
+            request.setAttribute("uname", ldap.getUid());
+            request.setAttribute("email", ldap.getAttribute("mail"));
+            request.setAttribute("firstname", ldap.getAttribute("givenname"));
+            request.setAttribute("lastname", ldap.getAttribute("sn"));
+            request.setAttribute("question", ldap.getAttribute("securityquestion"));
             
             dispatcher.forward(request, response);
         } catch (Exception e) {
@@ -75,17 +97,42 @@ public class AccountServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        try (PrintWriter out = response.getWriter()) {
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Not implemented</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>POST requests not implemented (yet)</h1>");
-            out.println("</body>");
-            out.println("</html>");
+        RequestDispatcher dispatcher;
+        ServletContext context = getServletContext();
+            
+        HttpSession session = request.getSession(false);
+            
+        if (session == null) {
+            response.sendRedirect(context.getContextPath() + "/login");
+            return;
         }
+        
+        Ldap ldap = (Ldap) session.getAttribute("ldap");
+        
+        List<String> params;
+        params = request.getReader().lines().collect(Collectors.toList());
+        
+        request.setAttribute("ok", true);
+        
+        try {
+            for (String temp : params) {
+                for (String key : this.info.keySet()) {
+                    Matcher matcher = this.info.get(key).matcher(temp);
+                    if (matcher.matches()) {
+                        if (!matcher.group(1).isEmpty()) {
+                            ldap.update(key, matcher.group(1));
+                        }
+                        break;
+                    }
+                }
+            }
+        } catch (LDAPException e) {
+            request.setAttribute("ok", false);
+            System.out.print(e);
+        }
+        
+        dispatcher = context.getNamedDispatcher("accountEditValidation");
+        dispatcher.forward(request, response);
     }
 
     /**
