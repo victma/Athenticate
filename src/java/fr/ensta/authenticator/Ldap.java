@@ -45,20 +45,14 @@ public class Ldap {
         }
     }
     
-    public int update(String attribute, String value){
+    public int update(String attribute, String value) throws LDAPException{
         Modification mod = new Modification(ModificationType.REPLACE, attribute, value); 
         
         SimpleBindRequest request = (SimpleBindRequest)ldap.getLastBindRequest();
         if (request == null){ return -1;}
         String dn = request.getBindDN();
         
-        try {   
-            LDAPResult result=ldap.modify(dn,mod);
-        } catch (LDAPException ex) {
-            System.out.print(ex.getMessage());
-            return 1;
-        }
-      
+        ldap.modify(dn,mod);
       return 0;
     }
     public String getAttribute(String attribute) throws LDAPException
@@ -71,14 +65,5 @@ public class Ldap {
         SearchResultEntry entry = searchResult.getSearchEntries().get(0);
         String retAttribute = entry.getAttributeValue(attribute);
         return retAttribute;
-    }
-    
-    public static void main(String[ ] args) throws LDAPException
-    {
-        Ldap ldap = new Ldap();
-        ldap.authenticate("vmalet", "malet");
-        String mail = ldap.getAttribute("securityquestion");
-        System.out.print(mail);
-        ldap.update("securityquestion", "Nom de la mère de mouss ?");
     }
 }

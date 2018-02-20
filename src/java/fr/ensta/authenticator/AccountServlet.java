@@ -5,6 +5,7 @@
  */
 package fr.ensta.authenticator;
 
+import com.unboundid.ldap.sdk.LDAPException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -111,20 +112,27 @@ public class AccountServlet extends HttpServlet {
         List<String> params;
         params = request.getReader().lines().collect(Collectors.toList());
         
-        for (String temp : params) {
-            for (String key : this.info.keySet()) {
-                Matcher matcher = this.info.get(key).matcher(temp);
-                if (matcher.matches()) {
-                    if (!matcher.group(1).isEmpty()) {
-                        ldap.update(key, matcher.group(1));
+        request.setAttribute("ok", true);
+        
+        try {
+            for (String temp : params) {
+                for (String key : this.info.keySet()) {
+                    Matcher matcher = this.info.get(key).matcher(temp);
+                    if (matcher.matches()) {
+                        if (!matcher.group(1).isEmpty()) {
+                            ldap.update(key, matcher.group(1));
+                        }
+                        break;
                     }
-                    break;
                 }
             }
+        } catch (LDAPException e) {
+            request.setAttribute("ok", false);
+            System.out.print(e);
         }
-        //if (credentials.get("uname").isEmpty())
         
-          
+        dispatcher = context.getNamedDispatcher("accountEditValidation");
+        dispatcher.forward(request, response);
     }
 
     /**

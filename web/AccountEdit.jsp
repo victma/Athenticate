@@ -35,7 +35,7 @@
     </head>
      <body>
         <h1>Edit Profile</h1>
-        <form action="<%=application.getContextPath()%>/account/update" method="post" enctype="text/plain">
+        <form action="<%=application.getContextPath()%>/account/edit" method="post" enctype="text/plain">
             <div class="info">
                 <label>First Name:</label> 
                 <input type="text" name="firstname" placeholder="<%=request.getAttribute("firstname")%>"><br />

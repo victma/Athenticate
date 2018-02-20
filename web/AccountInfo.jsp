@@ -50,6 +50,5 @@
         <p>
             <a href="<%=application.getContextPath()%>/account/edit">Edit Profile</a>    
         </p>
-        <%=request.getAttribute("path")%>
     </body>
 </html>

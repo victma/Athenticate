@@ -24,6 +24,10 @@
         <servlet-name>accountEdit</servlet-name>
         <jsp-file>/AccountEdit.jsp</jsp-file>
     </servlet>
+    <servlet>
+        <servlet-name>accountEditValidation</servlet-name>
+        <jsp-file>/AccountEditValidation.jsp</jsp-file>
+    </servlet>
     <servlet-mapping>
         <servlet-name>LoginServlet</servlet-name>
         <url-pattern>/login</url-pattern>
