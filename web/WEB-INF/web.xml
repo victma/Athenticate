@@ -12,6 +12,10 @@
         <servlet-name>LogoutServlet</servlet-name>
         <servlet-class>fr.ensta.authenticator.LogoutServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>LostCredentials</servlet-name>
+        <servlet-class>LostCredentials</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>AccountServlet</servlet-name>
         <url-pattern>/account/*</url-pattern>
@@ -36,10 +40,13 @@
         <servlet-name>loginForm</servlet-name>
         <jsp-file>/Login.jsp</jsp-file>
     </servlet>
-    
     <servlet-mapping>
         <servlet-name>LogoutServlet</servlet-name>
         <url-pattern>/logout</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>LostCredentials</servlet-name>
+        <url-pattern>/LostCredentials</url-pattern>
     </servlet-mapping>
     <session-config>
         <session-timeout>
