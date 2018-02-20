@@ -31,7 +31,7 @@
         <form action="<%=application.getContextPath()%>/login" method="post" enctype="text/plain">
             <input type="text" placeholder="User ID" name="uname" required><br />
             <input type="password" placeholder="Password" name="password" required><br />
-            <a href="#">Forgot password?</a><br />
+            <a href="<%=application.getContextPath()%>/lostcredentials">Forgot password?</a><br />
             
             <input type="submit" value="Login">
             <% if ((boolean) request.getAttribute("error")) { %>

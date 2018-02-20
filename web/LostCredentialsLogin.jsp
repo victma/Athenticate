@@ -8,7 +8,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Login</title>
+        <title>Lost password</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
@@ -23,19 +23,14 @@
                 padding: 10px;
                 margin-top: 20px;
             }
-            a {font-size: small}
-            .errorMsg {color: red}
         </style>
     </head>
     <body>
-        <form action="<%=application.getContextPath()%>/login" method="post" enctype="text/plain">
-            <h1>Hello <%=request.getAttribute("securityquestion")%>!</h1>
-            <input type="text" placeholder="Security question answer" name="securityanswer" required><br />
+        <form action="<%=application.getContextPath()%>/lostcredentials" method="post" enctype="text/plain">
+            <input type="hidden" name="step" value="1">
+            <input type="text" name="uid" placeholder="User ID" required><br />
             
-            <input type="submit" value="Reset Password">
-            <% if ((boolean) request.getAttribute("error")) { %>
-                <p class="errorMsg">Wrong answer. Try again</p>
-            <% } %>    
+            <input type="submit" value="Go to the security question"> 
         </form>
     </body>
 </html>

@@ -52,6 +52,10 @@
                 <label>Secret Question:</label> 
                 <input type="text" name="question" placeholder="<%=request.getAttribute("question")%>"><br />
             </div>
+            <div class="info">
+                <label>Answer to the Secret Question:</label> 
+                <input type="text" name="answer"><br />
+            </div>
             
             <input type="submit" value="Update">
         </form>
